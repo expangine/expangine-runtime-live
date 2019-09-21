@@ -288,9 +288,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
       for (const or of expressions)
       {
-        if (or(context) || thisRun.returnProperty in context)
+        const pass = or(context);
+
+        if (pass || thisRun.returnProperty in context)
         {
-          return true;
+          return pass;
         }
       }
 
