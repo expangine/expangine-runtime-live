@@ -1,7 +1,7 @@
 
 import { Runtime, DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate } from 'expangine-runtime';
 import { _number, _date, _text, _bool, _asList, _asMap, _asObject, _asTuple } from './helper';
-import { LiveContext, LiveResult } from './runtime';
+import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)
@@ -229,7 +229,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     isDaylightSavingTime(_date(params.value, context))
   );
 
-  run.setOperation(ops.isDST, (params) => (context) => 
+  run.setOperation(ops.isLeapYear, (params) => (context) => 
     isLeapYear(_date(params.value, context))
   );
 

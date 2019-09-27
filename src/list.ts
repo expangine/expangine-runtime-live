@@ -1,6 +1,6 @@
 import { Runtime, ListOps, getCompare, isBoolean, isEmpty, isDate, isNumber, isString, isArray } from 'expangine-runtime';
 import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject } from './helper';
-import { LiveCommand, LiveContext, LiveResult } from './runtime';
+import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
 // tslint:disable: no-magic-numbers
@@ -155,6 +155,25 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     return item;
   });
 
+  run.setOperation(ops.removeWhere, (params, scope) => (context) =>
+    handleListIteration(
+      _list(params.list, context), 
+      context, 
+      scope, 
+      n => n - 1, 
+      n => -1,
+      [],
+      (item, index, list, removed) => {
+        if (params.where(context)) {
+          removed.push(item);
+          list.splice(index, 1);
+        }
+        
+        return removed;
+      }
+    )
+  );
+
   run.setOperation(ops.contains, (params, scope) => (context) =>
     handleListIsEqual(
       _list(params.list, context), 
@@ -168,6 +187,35 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       () => false
     )
   );
+
+  run.setOperation(ops.find, (params, scope) => (context) => {
+    const reverse = _bool(params.reverse, context);
+    const list = _list(params.list, context);
+    const n = list.length;
+    const start = _number(params.start, context, reverse ? n - 1 : 0);
+    const clampedStart = Math.max(0, Math.min(n - 1, start));
+    const end = reverse ? -1 : n;
+    const inReverse = clampedStart > end;
+
+    if (reverse !== inReverse) {
+      return -1;
+    }
+
+    return handleListIteration(
+      list,
+      context,
+      scope,
+      () => start,
+      () => end,
+      undefined,
+      (item, index) => {
+        if (params.where(context)) {
+          return item;
+        }
+      },
+      true
+    );
+  });
 
   run.setOperation(ops.copy, (params, scope) => (context) => 
     params.deepCopy
@@ -361,6 +409,35 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       () => -1
     )
   );
+
+  run.setOperation(ops.findIndex, (params, scope) => (context) => {
+    const reverse = _bool(params.reverse, context);
+    const list = _list(params.list, context);
+    const n = list.length;
+    const start = _number(params.start, context, reverse ? n - 1 : 0);
+    const clampedStart = Math.max(0, Math.min(n - 1, start));
+    const end = reverse ? -1 : n;
+    const inReverse = clampedStart > end;
+
+    if (reverse !== inReverse) {
+      return -1;
+    }
+
+    return handleListIteration(
+      list,
+      context,
+      scope,
+      () => start,
+      () => end,
+      -1,
+      (item, index) => {
+        if (params.where(context)) {
+          return index;
+        }
+      },
+      true
+    );
+  });
 
   run.setOperation(ops.last, (params) => (context) => {
     const list = _list(params.list, context);
@@ -748,7 +825,8 @@ function handleListIteration<R>(
   start: (n: number) => number,
   end: (n: number) => number,
   initialResult: R,
-  onItem: (current: any, index: number, list: any[], lastResult: R) => R
+  onItem: (current: any, index: number, list: any[], lastResult: R) => R,
+  earlyExit: boolean = false
 ): R 
 {
 return handleList(list, context, scope, () => 
@@ -767,9 +845,24 @@ return handleList(list, context, scope, () =>
     context[scope.item] = item;
     context[scope.index] = i;
 
-    result = onItem(item, i, list, result);
+    const newResult = onItem(item, i, list, result);
 
-    i += d;
+    if (earlyExit)
+    {
+      if (newResult !== undefined)
+      {
+        return newResult;
+      }
+    }
+    else
+    {
+      result = newResult;
+    }
+
+    if (list[i] === item || i !== 1)
+    {
+      i += d;
+    }
   }
 
   return result;

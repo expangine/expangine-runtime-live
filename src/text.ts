@@ -1,6 +1,6 @@
 import { Runtime, TextOps, isString, parse } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple } from './helper';
-import { LiveContext, LiveResult } from './runtime';
+import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)

@@ -1,4 +1,4 @@
-import { LiveContext, LiveResult, LiveCommand } from './runtime';
+import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 export declare function saveScope<K extends string>(context: LiveContext, scope: Record<string, K>): Record<K, any>;
 export declare function restoreScope<K extends string>(context: LiveContext, saved: Record<K, any>): void;
 export declare function preserveScope<R = any>(context: LiveContext, props: string[], run: () => R): R;

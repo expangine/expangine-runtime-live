@@ -1,6 +1,6 @@
 import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject } from 'expangine-runtime';
 import { _list, _number } from './helper';
-import { LiveContext, LiveResult, LiveCommand } from './runtime';
+import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)

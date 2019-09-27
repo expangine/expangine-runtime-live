@@ -5,7 +5,7 @@ import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainE
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, isUndefined, objectMap } from 'expangine-runtime';
 import { restoreScope, preserveScope } from './helper';
-import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './runtime';
+import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)

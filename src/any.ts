@@ -1,6 +1,6 @@
 import { Runtime, AnyOps, parse, compare, copy, toString } from 'expangine-runtime';
 import { _asList, _asTuple, _asMap, _asObject } from './helper';
-import { LiveContext, LiveResult } from './runtime';
+import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)

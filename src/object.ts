@@ -1,6 +1,6 @@
 import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString } from 'expangine-runtime';
 import { _object, restoreScope, saveScope } from './helper';
-import { LiveContext, LiveResult, LiveCommand } from './runtime';
+import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)

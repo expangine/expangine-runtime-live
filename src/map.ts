@@ -1,6 +1,6 @@
 import { Runtime, MapOps, toArray, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray } from 'expangine-runtime';
 import { saveScope, restoreScope, _map, _optional, _number } from './helper';
-import { LiveCommand, LiveContext, LiveResult } from './runtime';
+import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
 // tslint:disable: no-magic-numbers
@@ -66,6 +66,17 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     }
 
     return entries;
+  });
+
+  run.setOperation(ops.pairs, (params) => (context) => {
+    const map = _map(params.map, context);
+    const pairs: Array<{ key: any, value: any }> = [];
+
+    for (const [key, value] of map.entries()) {
+      pairs.push({ key, value });
+    }
+
+    return pairs;
   });
 
   run.setOperation(ops.clear, (params) => (context) => {

@@ -1,6 +1,6 @@
 import { Runtime, NumberOps, parse, isNumber, isUndefined, isString, isWhole } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _textMaybe, _asTuple, _asObject, _asMap, _asList } from './helper';
-import { LiveContext, LiveResult } from './runtime';
+import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 const DEFAULT_BASE = 10;

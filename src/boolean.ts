@@ -1,7 +1,7 @@
 
 import { Runtime, BooleanOps, isBoolean } from 'expangine-runtime';
 import { _bool, _asList, _asObject, _asTuple, _asMap } from './helper';
-import { LiveContext, LiveResult } from './runtime';
+import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)
