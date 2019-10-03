@@ -100,7 +100,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   });
 
   run.setOperation(ops.soundex, (params) => {
-    const LETTERS_ONLY = /[a-z]/g;
+    const LETTERS_ONLY = /[^a-z]/g;
     const ALLOWED_ONLY = /[^bfpvcgjkqsxzdtlmnr]/g;
     const SOUNDEX_MIN_DEFAULT = 4;
     const MAP = {
@@ -150,15 +150,29 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   });
 
   run.setOperation(ops.distance, (params) => {
-    const distance = (s: string, t: string): number => {
-      if (!s.length) return t.length;
-      if (!t.length) return s.length;
+    const distance = (a: string, b: string): number => {
+      const distanceMatrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
 
-      return Math.min(
-        distance(s.substring(1), t) + 1,
-        distance(t.substring(1), s) + 1,
-        distance(s.substring(1), t.substring(1)) + (s[0] !== t[0] ? 1 : 0)
-      ) + 1;
+      for (let i = 0; i <= a.length; i += 1) {
+        distanceMatrix[0][i] = i;
+      }
+
+      for (let j = 0; j <= b.length; j += 1) {
+        distanceMatrix[j][0] = j;
+      }
+
+      for (let j = 1; j <= b.length; j += 1) {
+        for (let i = 1; i <= a.length; i += 1) {
+          const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+          distanceMatrix[j][i] = Math.min(
+            distanceMatrix[j][i - 1] + 1,
+            distanceMatrix[j - 1][i] + 1,
+            distanceMatrix[j - 1][i - 1] + indicator,
+          );
+        }
+      }
+
+      return distanceMatrix[b.length][a.length];
     };
     
     return (context) => {
