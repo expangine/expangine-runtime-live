@@ -3,7 +3,8 @@ import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainE
   IfExpression, NotExpression, AndExpression, OrExpression, ForExpression, 
   WhileExpression, DefineExpression, SwitchExpression, SetExpression, 
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
-  ReturnExpression, NoExpression, isUndefined, objectMap } from 'expangine-runtime';
+  ReturnExpression, NoExpression, TupleExpression, ObjectExpression,
+  isUndefined, objectMap } from 'expangine-runtime';
 import { restoreScope, preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
 
@@ -501,6 +502,20 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const returnValue = thisRun.getCommand(expr.value);
 
     return (context) => context[thisRun.returnProperty] = returnValue(context);
+  });
+
+  run.setExpression(TupleExpression, (expr, thisRun) =>
+  {
+    const elements: LiveCommand[] = expr.expressions.map(e => thisRun.getCommand(e));
+
+    return (context) => elements.map(cmd => cmd(context));
+  });
+
+  run.setExpression(ObjectExpression, (expr, thisRun) =>
+  {
+    const props: LiveCommandMap = objectMap(expr.props, e => thisRun.getCommand(e));
+
+    return (context) => objectMap(props, cmd => cmd(context));
   });
 
   run.setExpression(NoExpression, () => () => undefined);

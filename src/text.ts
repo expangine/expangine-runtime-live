@@ -191,6 +191,52 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     compare(_text(params.value, context), _text(params.test, context), _bool(params.ignoreCase, context, false))
   );
 
+  run.setOperation(ops.like, (params) => (context) => {
+    const value = _text(params.value, context);
+    const pattern = _text(params.pattern, context);
+    const ignoreCase = _bool(params.ignoreCase, context, false);
+    
+    const regexPattern = pattern
+      .split('%')
+      .map(x => x ? x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : x)
+      .join('.*')
+    ;
+
+    const regex = new RegExp('^' + regexPattern + '$', ignoreCase ? 'i' : undefined);
+
+    return !!value.match(regex);
+  });
+
+  run.setOperation(ops.pad, (params) => (context) => {
+    let value = _text(params.value, context);
+    const padding = _text(params.padding, context) || ' ';
+    const append = _bool(params.append, context);
+    const min = _number(params.min, context);
+    const max = _numberMaybe(params.max, context);
+
+    if (append) { 
+      while (value.length < min) {
+        value = value + padding;
+      }
+    } else {
+      while (value.length < min) {
+        value = padding + value;
+      }
+    }
+
+    if (max !== undefined) {
+      if (value.length > max) {
+        if (append) {
+          value = value.substring(0, max);
+        } else {
+          value = value.substring(max - value.length, max);
+        }
+      }
+    }
+
+    return value;
+  });
+
 
   // Other
 
