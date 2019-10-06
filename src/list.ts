@@ -1,5 +1,5 @@
 import { Runtime, ListOps, getCompare, isBoolean, isEmpty, isDate, isNumber, isString, isArray } from 'expangine-runtime';
-import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject } from './helper';
+import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -639,6 +639,41 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const list = _list(params.list, context);
 
     return handleList(list, context, scope, () => {
+      type Grouping = { by: any, group: any[] };
+
+      const map = new Map<any, Grouping>();
+      const groups: Grouping[] = [];
+
+      for (let i = 0; i < list.length; i++) {
+        const value = list[i];
+
+        context[scope.index] = i;
+        context[scope.item] = value;
+        context[scope.list] = list;
+
+        const by = params.by(context);
+        const grouping = map.get(by);
+        const keyValue = _optional(params.getValue, context, value);
+
+        if (grouping) {
+          grouping.group.push(keyValue);
+        } else {
+          const newGrouping: Grouping = {
+            by, group: [ keyValue ],
+          };
+          groups.push(newGrouping);
+          map.set(by, newGrouping);
+        }
+      }
+
+      return groups;
+    });
+  });
+
+  run.setOperation(ops.toListMap, (params, scope) => (context) => {
+    const list = _list(params.list, context);
+
+    return handleList(list, context, scope, () => {
       const map = new Map<any, any[]>();
 
       for (let i = 0; i < list.length; i++) {
@@ -687,6 +722,224 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       return map;
     });
   });
+
+  // Aggregates
+
+  run.setOperation(ops.min, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      null,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg = agg === null ? value : Math.min(value, agg);
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
+
+  run.setOperation(ops.max, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      null,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg = agg === null ? value : Math.max(value, agg);
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
+
+  run.setOperation(ops.sum, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      null,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg = agg === null ? value : value + agg;
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
+
+  run.setOperation(ops.avg, (params, scope) => (context) => 
+    handleAggregate(
+      _list(params.list, context),
+      context,
+      scope,
+      { count: 0, sum: 0 },
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg.count++;
+          agg.sum += value;
+        }
+        
+        return agg;
+      },
+      (agg) => agg.count === 0 ? null : agg.sum / agg.count,
+    )
+  );
+
+  run.setOperation(ops.std, (params, scope) => (context) => 
+    handleAggregate(
+      _list(params.list, context),
+      context,
+      scope,
+      { count: 0, sum: 0, values: [] as number[] },
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg.count++;
+          agg.sum += value;
+          agg.values.push(value);
+        }
+        
+        return agg;
+      },
+      (agg) => {
+         if (agg.count === 0) {
+           return null;
+         }
+         const avg = agg.sum / agg.count;
+         const squareSum = agg.values.reduce((sum, v) => sum + (v - avg) * (v - avg), 0);
+         const squareAvg = squareSum / agg.count;
+
+         return Math.sqrt(squareAvg);
+      },
+    )
+  );
+
+  run.setOperation(ops.variance, (params, scope) => (context) => 
+    handleAggregate(
+      _list(params.list, context),
+      context,
+      scope,
+      { count: 0, sum: 0, values: [] as number[] },
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg.count++;
+          agg.sum += value;
+          agg.values.push(value);
+        }
+        
+        return agg;
+      },
+      (agg) => {
+         if (agg.count === 0) {
+           return null;
+         }
+         if (agg.count === 1) {
+           return 0;
+         }
+         const avg = agg.sum / agg.count;
+         const squareSum = agg.values.reduce((sum, v) => sum + (v - avg) * (v - avg), 0);
+         const squareAvg = squareSum / (agg.count - 1);
+
+         return Math.sqrt(squareAvg);
+      },
+    )
+  );
+
+  run.setOperation(ops.median, (params, scope) => (context) => 
+    handleAggregate(
+      _list(params.list, context),
+      context,
+      scope,
+      { values: [] as number[] },
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          agg.values.push(value);
+        }
+        
+        return agg;
+      },
+      (agg) => agg.values.length === 0
+        ? null
+        : agg.values.length % 2 === 1
+          ? agg.values[Math.floor(agg.values.length / 2)]
+          : (
+              agg.values[Math.floor(agg.values.length / 2) - 1] +
+              agg.values[Math.floor(agg.values.length / 2)]
+          ) / 2,
+    )
+  );
+
+  run.setOperation(ops.bitand, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      1,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          // tslint:disable-next-line: no-bitwise
+          agg = agg & value;
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
+
+  run.setOperation(ops.bitor, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      0,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          // tslint:disable-next-line: no-bitwise
+          agg = agg | value;
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
+
+  run.setOperation(ops.bitxor, (params, scope) => (context) => 
+    handleAggregate<number | null>(
+      _list(params.list, context),
+      context,
+      scope,
+      0,
+      (item, index, list, agg) => {
+        const value = _numberMaybe(params.value, context);
+        if (value !== undefined) {
+          // tslint:disable-next-line: no-bitwise
+          agg = agg ^ value;
+        }
+        
+        return agg;
+      },
+      (agg) => agg,
+    )
+  );
 
   // Comparisons
 
@@ -818,6 +1071,33 @@ function handleList<R>(list: any[], context: object, scope: Record<string, strin
   return result;
 }
 
+function handleAggregate<A>(
+  list: any[],
+  context: object,
+  scope: Record<'list' | 'item' | 'index', string>,
+  initialAggregate: A,
+  aggregate: (current: any, index: number, list: any[], aggregate: A) => A,
+  getAggregate: (aggregate: A) => number | null,
+): number | null {
+  return handleList(list, context, scope, () =>
+  {
+    let agg: A | null = initialAggregate;
+
+    for (let i = 0; i < list.length; i++)
+    {
+      const item = list[i];
+
+      context[scope.list] = list;
+      context[scope.item] = item;
+      context[scope.index] = i;
+
+      agg = aggregate(item, i, list, agg);
+    }
+
+    return getAggregate(agg);
+  });
+}
+
 function handleListIteration<R>(
   list: any[],
   context: object,
@@ -829,44 +1109,44 @@ function handleListIteration<R>(
   earlyExit: boolean = false
 ): R 
 {
-return handleList(list, context, scope, () => 
-{
-  const n = list.length;
-  let i = start(n);
-  const e = end(n);
-  const d = i < e ? 1 : -1;
-  let result = initialResult;
-
-  while (i !== e)
+  return handleList(list, context, scope, () => 
   {
-    const item = list[i];
+    const n = list.length;
+    let i = start(n);
+    const e = end(n);
+    const d = i < e ? 1 : -1;
+    let result = initialResult;
 
-    context[scope.list] = list;
-    context[scope.item] = item;
-    context[scope.index] = i;
-
-    const newResult = onItem(item, i, list, result);
-
-    if (earlyExit)
+    while (i !== e)
     {
-      if (newResult !== undefined)
+      const item = list[i];
+
+      context[scope.list] = list;
+      context[scope.item] = item;
+      context[scope.index] = i;
+
+      const newResult = onItem(item, i, list, result);
+
+      if (earlyExit)
       {
-        return newResult;
+        if (newResult !== undefined)
+        {
+          return newResult;
+        }
+      }
+      else
+      {
+        result = newResult;
+      }
+
+      if (list[i] === item || i !== 1)
+      {
+        i += d;
       }
     }
-    else
-    {
-      result = newResult;
-    }
 
-    if (list[i] === item || i !== 1)
-    {
-      i += d;
-    }
-  }
-
-  return result;
-});
+    return result;
+  });
 }
 
 function handleListIsEqual<R>(

@@ -1,5 +1,5 @@
 import { Runtime, AnyOps, parse, compare, copy, toString } from 'expangine-runtime';
-import { _asList, _asTuple, _asMap, _asObject } from './helper';
+import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -16,6 +16,39 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setOperation(ops.copy, (params) => (context) =>
     copy(params.value(context))
   );
+
+  run.setOperation(ops.isDefined, (params) => (context) => {
+    const value = params.value(context);
+    
+    return value !== null && value !== undefined;
+  });
+
+  run.setOperation(ops.getDefined, (params, scope) => (context) => {
+    const value = params.value(context);
+    const isDefined = value !== null && value !== undefined;
+  
+    if (isDefined) {
+      const saved = saveScope(context, scope);
+      context[scope.defined] = value;
+      params.defined(context);
+      restoreScope(context, saved);
+    }
+
+    return isDefined;
+  });
+
+  run.setOperation(ops.coalesce, (params) => (context) => {
+    const a = params.a(context);
+    if (a !== null && a !== undefined) return a;
+    const b = params.b(context);
+    if (b !== null && b !== undefined) return b;
+    const c = params.c(context);
+    if (c !== null && c !== undefined) return c;
+    const d = params.d(context);
+    if (d !== null && d !== undefined) return d;
+    const e = params.e(context);
+    if (e !== null && e !== undefined) return e;
+  });
 
   // Comparisons
 

@@ -864,10 +864,10 @@ describe('list', () => {
     expect(result).toEqual(21);
   });
 
-  it('group', () => 
+  it('toListMap', () => 
   {
     const process = LiveRuntime.eval(['op', 'map:plain', {
-      map: ['op', 'list:group', {
+      map: ['op', 'list:toListMap', {
         list: ['get', ['source']],
         getKey: ['op', 'num:%', {
           value: ['get', ['item']],
@@ -887,6 +887,31 @@ describe('list', () => {
       1: [1, 4, 7],
       2: [2, 5]
     });
+  });
+
+  it('group', () => 
+  {
+    const process = LiveRuntime.eval(
+      ['op', 'list:group', {
+        list: ['get', ['source']],
+        by: ['op', 'num:%', {
+          value: ['get', ['item']],
+          divisor: 3
+        }]
+      }]
+    );
+
+    const context = {
+      source: [0, 1, 2, 3, 4, 5, 6, 7]
+    };
+
+    const result = process(context);
+
+    expect(result).toEqual([
+      { by: 0, group: [0, 3, 6] },
+      { by: 1, group: [1, 4, 7] },
+      { by: 2, group: [2, 5] }
+    ]);
   });
 
 });
