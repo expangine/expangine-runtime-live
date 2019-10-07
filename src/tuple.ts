@@ -1,5 +1,5 @@
 import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject } from 'expangine-runtime';
-import { _list, _number } from './helper';
+import { _list, _number, _listMaybe } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -14,6 +14,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _listMaybe(params.value, context)
+  );
 
   run.setOperation(ops.cmp, (params) => (context) => 
     compare(params.value(context), params.test(context))

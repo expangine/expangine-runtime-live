@@ -1,5 +1,5 @@
 
-import { isNumber, isString, isArray, isMap, isObject, isDate } from 'expangine-runtime';
+import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -88,6 +88,8 @@ export function _typedDynamic<T> (isValid: (value: any) => value is T, invalidVa
   };
 }
 
+export const _boolMaybe = _typed<boolean | undefined> (isBoolean, undefined);
+
 export const _number = _typed (isNumber, Number.NaN);
 
 export const _numberMaybe = _typed<number | undefined> (isNumber, undefined);
@@ -98,12 +100,19 @@ export const _textMaybe = _typed<string | undefined> (isString, undefined);
 
 export const _list  = _typedDynamic<any[]> (isArray, () => []);
 
+export const _listMaybe = _typed<any[] | undefined> (isArray, undefined);
+
 export const _map = _typedDynamic<Map<any, any>> (isMap, () => new Map());
+
+export const _mapMaybe = _typed<Map<any, any> | undefined> (isMap, undefined);
 
 export const _object = _typedDynamic<any>(isObject, () => ({}));
 
+export const _objectMaybe = _typed<any | undefined>(isObject, undefined);
+
 export const _date = _typedDynamic<Date>(isDate, () => new Date());
 
+export const _dateMaybe = _typed<Date | undefined> (isDate, undefined);
 
 export function _asList(getValue: LiveCommand, context: LiveContext)
 {

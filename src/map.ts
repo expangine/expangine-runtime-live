@@ -1,5 +1,5 @@
 import { Runtime, MapOps, toArray, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray } from 'expangine-runtime';
-import { saveScope, restoreScope, _map, _optional, _number } from './helper';
+import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -18,6 +18,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _mapMaybe(params.value, context)
+  );
 
   run.setOperation(ops.get, (params) => (context) => 
     _map(params.map, context).get(params.key(context))

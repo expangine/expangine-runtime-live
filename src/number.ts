@@ -142,6 +142,10 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
 
   // Unary Operations
 
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _numberMaybe(params.value, context)
+  );
+
   run.setOperation(ops.sqrt, (params) => (context) => 
     Math.sqrt(_number(params.value, context))
   );

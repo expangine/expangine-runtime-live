@@ -1,5 +1,5 @@
 import { Runtime, ListOps, getCompare, isBoolean, isEmpty, isDate, isNumber, isString, isArray } from 'expangine-runtime';
-import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe } from './helper';
+import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -18,6 +18,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _listMaybe(params.value, context)
+  );
 
   run.setOperation(ops.build, (params, scope) => (context) => {
     const n = _number(params.count, context);

@@ -1,5 +1,5 @@
 import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString } from 'expangine-runtime';
-import { _object, restoreScope, saveScope } from './helper';
+import { _object, restoreScope, saveScope, _objectMaybe } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -14,6 +14,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _objectMaybe(params.value, context)
+  );
 
   run.setOperation(ops.has, (params) => (context) =>
     params.key(context) in _object(params.object, context)

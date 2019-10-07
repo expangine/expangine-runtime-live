@@ -1,5 +1,5 @@
 import { Runtime, TextOps, isString, parse } from 'expangine-runtime';
-import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple } from './helper';
+import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -14,6 +14,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _textMaybe(params.value, context)
+  );
 
   run.setOperation(ops.append, (params) => (context) => 
     _text(params.value, context) + _text(params.append, context)

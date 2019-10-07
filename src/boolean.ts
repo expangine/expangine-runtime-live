@@ -1,6 +1,6 @@
 
 import { Runtime, BooleanOps, isBoolean } from 'expangine-runtime';
-import { _bool, _asList, _asObject, _asTuple, _asMap } from './helper';
+import { _bool, _asList, _asObject, _asTuple, _asMap, _boolMaybe } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -15,6 +15,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   // Operations
+
+  run.setOperation(ops.maybe, (params) => (context) => 
+    _boolMaybe(params.value, context)
+  );
 
   run.setOperation(ops.and, (params) => (context) => 
     _bool(params.a, context) && _bool(params.b, context)
