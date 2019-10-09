@@ -251,7 +251,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   // Formatters
 
   run.setOperation(ops.toNumber, (params) => (context) => {
-    const value = parseInt(_text(params.value, context));
+    const value = parseFloat(_text(params.value, context));
 
     return isFinite(value) 
       ? value 

@@ -5,7 +5,7 @@ import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainE
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression,
   isUndefined, objectMap } from 'expangine-runtime';
-import { restoreScope, preserveScope } from './helper';
+import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -423,37 +423,33 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setExpression(DefineExpression, (expr, thisRun) => 
   {
-    const define: LiveCommandMap = objectMap(expr.define, e => thisRun.getCommand(e));
+    const define: [string, LiveCommand][] = expr.define.map(([name, e]) => [name, thisRun.getCommand(e)]);
+    const vars: string[] = define.map(([name]) => name);
     const body: LiveCommand = thisRun.getCommand(expr.body);
 
     return (context) =>
     {
       if (thisRun.returnProperty in context) return;
 
-      const pop = {};
-
-      for (const prop in define) 
+      return preserveScope(context, vars, () =>
       {
-        pop[prop] = context[prop];
-      }
+        for (const [name, defined] of define)
+        {
+          if (thisRun.returnProperty in context)
+          {
+            return;
+          }
 
-      for (const prop in define) 
-      {
-        context[prop] = define[prop](context);
+          context[name] = defined(context);
+        }
 
         if (thisRun.returnProperty in context)
         {
-          restoreScope(context, pop);
-
           return;
         }
-      }
 
-      const result = body(context);
-
-      restoreScope(context, pop);
-
-      return result;
+        return body(context);
+      });
     };
   });
 
