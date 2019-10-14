@@ -893,7 +893,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       _list(params.list, context),
       context,
       scope,
-      1,
+      0xffffffff,
       (item, index, list, agg) => {
         const value = _numberMaybe(params.value, context);
         if (value !== undefined) {
