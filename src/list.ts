@@ -202,7 +202,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const inReverse = clampedStart > end;
 
     if (reverse !== inReverse) {
-      return -1;
+      return undefined;
     }
 
     return handleListIteration(
