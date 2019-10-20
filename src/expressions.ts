@@ -45,22 +45,22 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     return { end: true, previous, step, value };
   }
 
-  run.setExpression(ConstantExpression, (expr, _thisRun) => 
+  run.setExpression(ConstantExpression, (expr, provider) => 
   {
     return () => expr.value
   });
 
-  run.setExpression(GetExpression, (expr, thisRun) => 
+  run.setExpression(GetExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
+    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
 
     return (context) => traversePath(context, context, parts).value;
   });
 
-  run.setExpression(SetExpression, (expr, thisRun) => 
+  run.setExpression(SetExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
-    const getValue: LiveCommand = thisRun.getCommand(expr.value);
+    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
+    const getValue: LiveCommand = provider.getCommand(expr.value);
 
     return (context) => 
     {
@@ -88,10 +88,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(UpdateExpression, (expr, thisRun) => 
+  run.setExpression(UpdateExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
-    const getValue: LiveCommand = thisRun.getCommand(expr.value);
+    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
+    const getValue: LiveCommand = provider.getCommand(expr.value);
     const currentVariable: string = expr.currentVariable;
 
     return (context) => 
@@ -125,25 +125,25 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(SubExpression, (expr, thisRun) => 
+  run.setExpression(SubExpression, (expr, provider) => 
   {
-    const getValue: LiveCommand = thisRun.getCommand(expr.value);
-    const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
+    const getValue: LiveCommand = provider.getCommand(expr.value);
+    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
 
     return (context) => traversePath(context, getValue(context), parts).value;
   });
 
-  run.setExpression(OperationExpression, (expr, thisRun) => 
+  run.setExpression(OperationExpression, (expr, provider) => 
   {
-    const params: LiveCommandMap = objectMap(expr.params, e => thisRun.getCommand(e));
-    const op = thisRun.getOperation(expr.name);
+    const params: LiveCommandMap = objectMap(expr.params, e => provider.getCommand(e));
+    const op = provider.getOperation(expr.name);
 
     if (!op) 
     { 
       throw new Error(`Operation with ${expr.name} is not defined in the given runtime.`);
     }
     
-    const defaults = thisRun.getOperationScopeDefaults(expr.name);
+    const defaults = provider.getOperationScopeDefaults(expr.name);
     let scopeAlias = expr.scopeAlias;
 
     if (defaults) 
@@ -166,19 +166,19 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
     return (context) =>
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return operationCommand(context);
     };
   });
 
-  run.setExpression(ChainExpression, (expr, thisRun) => 
+  run.setExpression(ChainExpression, (expr, provider) => 
   { 
-    const chain: LiveCommand[] = expr.chain.map(data => thisRun.getCommand(data));
+    const chain: LiveCommand[] = expr.chain.map(data => provider.getCommand(data));
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       let last;
 
@@ -186,7 +186,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       {
         last = cmd(context);
 
-        if (thisRun.returnProperty in context)
+        if (provider.returnProperty in context)
         {
           return;
         }
@@ -196,14 +196,14 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(IfExpression, (expr, thisRun) => 
+  run.setExpression(IfExpression, (expr, provider) => 
   {
-    const cases: [LiveCommand, LiveCommand][] = expr.cases.map(([test, result]) => [thisRun.getCommand(test), thisRun.getCommand(result)]);
-    const otherwise: LiveCommand = thisRun.getCommand(expr.otherwise);
+    const cases: [LiveCommand, LiveCommand][] = expr.cases.map(([test, result]) => [provider.getCommand(test), provider.getCommand(result)]);
+    const otherwise: LiveCommand = provider.getCommand(expr.otherwise);
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       for (const caseExpression of cases)
       {
@@ -211,36 +211,36 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
         if (test(context)) 
         {
-          return thisRun.returnProperty in context
+          return provider.returnProperty in context
             ? undefined
             : result(context);
         }
       }
       
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return otherwise(context);
     };
   });
 
-  run.setExpression(SwitchExpression, (expr, thisRun) => 
+  run.setExpression(SwitchExpression, (expr, provider) => 
   {
-    const valueCommand: LiveCommand = thisRun.getCommand(expr.value);
+    const valueCommand: LiveCommand = provider.getCommand(expr.value);
     const cases: [LiveCommand[], LiveCommand][] = expr.cases.map(([tests, result]) => [
-      tests.map(t => thisRun.getCommand(t)),
-      thisRun.getCommand(result)
+      tests.map(t => provider.getCommand(t)),
+      provider.getCommand(result)
     ]);
-    const defaultCase: LiveCommand = thisRun.getCommand(expr.defaultCase);
-    const isEqual = thisRun.getOperation(expr.op);
+    const defaultCase: LiveCommand = provider.getCommand(expr.defaultCase);
+    const isEqual = provider.getOperation(expr.op);
     const noScope = {};
     
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       const value = valueCommand(context);
 
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       for (const [tests, result] of cases)
       {
@@ -254,7 +254,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
             break;
           }
 
-          if (thisRun.returnProperty in context) return;
+          if (provider.returnProperty in context) return;
         }
 
         if (matches) 
@@ -267,25 +267,25 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(NotExpression, (expr, thisRun) => 
+  run.setExpression(NotExpression, (expr, provider) => 
   {
-    const expression: LiveCommand = thisRun.getCommand(expr.expression);
+    const expression: LiveCommand = provider.getCommand(expr.expression);
 
     return (context) => !expression(context);
   });
 
-  run.setExpression(AndExpression, (expr, thisRun) => 
+  run.setExpression(AndExpression, (expr, provider) => 
   {
-    const expressions: LiveCommand[] = expr.expressions.map(e => thisRun.getCommand(e));
+    const expressions: LiveCommand[] = expr.expressions.map(e => provider.getCommand(e));
     const defaultResult: boolean = expressions.length > 0;
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       for (const and of expressions)
       {
-        if (!and(context) || thisRun.returnProperty in context)
+        if (!and(context) || provider.returnProperty in context)
         {
           return false;
         }
@@ -295,20 +295,20 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(OrExpression, (expr, thisRun) => 
+  run.setExpression(OrExpression, (expr, provider) => 
   {
-    const expressions: LiveCommand[] = expr.expressions.map(e => thisRun.getCommand(e));
+    const expressions: LiveCommand[] = expr.expressions.map(e => provider.getCommand(e));
     const defaultResult: boolean = expressions.length === 0;
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       for (const or of expressions)
       {
         const pass = or(context);
 
-        if (pass || thisRun.returnProperty in context)
+        if (pass || provider.returnProperty in context)
         {
           return pass;
         }
@@ -318,18 +318,18 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(ForExpression, (expr, thisRun) => 
+  run.setExpression(ForExpression, (expr, provider) => 
   {
     const variable: string = expr.variable;
-    const start: LiveCommand = thisRun.getCommand(expr.start);
-    const end: LiveCommand = thisRun.getCommand(expr.end);
-    const body: LiveCommand = thisRun.getCommand(expr.body);
+    const start: LiveCommand = provider.getCommand(expr.start);
+    const end: LiveCommand = provider.getCommand(expr.end);
+    const body: LiveCommand = provider.getCommand(expr.body);
     const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return preserveScope(context, [variable, breakVariable], () => 
       {
@@ -341,7 +341,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
         let last;
         const dir = i < stop ? 1 : -1;
 
-        if (thisRun.returnProperty in context)
+        if (provider.returnProperty in context)
         {
           return;
         }
@@ -351,7 +351,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
           context[variable] = i;
           last = body(context);
 
-          if (context[breakVariable] || thisRun.returnProperty in context) 
+          if (context[breakVariable] || provider.returnProperty in context) 
           {
             break;
           }
@@ -359,7 +359,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
           i += dir;
           stop = end(context);
 
-          if (thisRun.returnProperty in context) return;
+          if (provider.returnProperty in context) return;
         }
 
         return last;
@@ -367,16 +367,16 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(WhileExpression, (expr, thisRun) => 
+  run.setExpression(WhileExpression, (expr, provider) => 
   {
-    const condition: LiveCommand = thisRun.getCommand(expr.condition);
-    const body: LiveCommand = thisRun.getCommand(expr.body);
+    const condition: LiveCommand = provider.getCommand(expr.condition);
+    const body: LiveCommand = provider.getCommand(expr.body);
     const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return preserveScope(context, [breakVariable], () =>
       {
@@ -387,11 +387,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
         while (condition(context) && iterations++ < max)
         {
-          if (thisRun.returnProperty in context) return;
+          if (provider.returnProperty in context) return;
 
           last = body(context);
 
-          if (context[breakVariable] || thisRun.returnProperty in context) 
+          if (context[breakVariable] || provider.returnProperty in context) 
           {
             break;
           }
@@ -402,16 +402,16 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(DoExpression, (expr, thisRun) => 
+  run.setExpression(DoExpression, (expr, provider) => 
   {
-    const condition: LiveCommand = thisRun.getCommand(expr.condition);
-    const body: LiveCommand = thisRun.getCommand(expr.body);
+    const condition: LiveCommand = provider.getCommand(expr.condition);
+    const body: LiveCommand = provider.getCommand(expr.body);
     const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return preserveScope(context, [breakVariable], () =>
       {
@@ -422,11 +422,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
         do
         {
-          if (thisRun.returnProperty in context) return;
+          if (provider.returnProperty in context) return;
 
           last = body(context);
 
-          if (context[breakVariable] || thisRun.returnProperty in context) 
+          if (context[breakVariable] || provider.returnProperty in context) 
           {
             break;
           }
@@ -438,21 +438,21 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(DefineExpression, (expr, thisRun) => 
+  run.setExpression(DefineExpression, (expr, provider) => 
   {
-    const define: [string, LiveCommand][] = expr.define.map(([name, e]) => [name, thisRun.getCommand(e)]);
+    const define: [string, LiveCommand][] = expr.define.map(([name, e]) => [name, provider.getCommand(e)]);
     const vars: string[] = define.map(([name]) => name);
-    const body: LiveCommand = thisRun.getCommand(expr.body);
+    const body: LiveCommand = provider.getCommand(expr.body);
 
     return (context) =>
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       return preserveScope(context, vars, () =>
       {
         for (const [name, defined] of define)
         {
-          if (thisRun.returnProperty in context)
+          if (provider.returnProperty in context)
           {
             return;
           }
@@ -460,7 +460,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
           context[name] = defined(context);
         }
 
-        if (thisRun.returnProperty in context)
+        if (provider.returnProperty in context)
         {
           return;
         }
@@ -470,12 +470,12 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(TemplateExpression, (expr, thisRun) => 
+  run.setExpression(TemplateExpression, (expr, provider) => 
   {
     const SECTION_TYPES = 2;
     const SECTION_INDEX_CONSTANT = 0;
 
-    const params: LiveCommandMap = objectMap(expr.params, e => thisRun.getCommand(e));
+    const params: LiveCommandMap = objectMap(expr.params, e => provider.getCommand(e));
     const template: string = expr.template;
 
     const sections = template.split(/[\{\}]/).map((section, index) => {
@@ -492,41 +492,41 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     };
   });
 
-  run.setExpression(InvokeExpression, (expr, thisRun) =>
+  run.setExpression(InvokeExpression, (expr, provider) =>
   {
-    const func = thisRun.getFunction(expr.name);
-    const command = thisRun.getCommand(func.options.expression);
-    const args = objectMap(expr.args, a => thisRun.getCommand(a));
+    const func = provider.getFunction(expr.name);
+    const command = provider.getCommand(func.options.expression);
+    const args = objectMap(expr.args, a => provider.getCommand(a));
 
     return (context) => 
     {
-      if (thisRun.returnProperty in context) return;
+      if (provider.returnProperty in context) return;
 
       const params = objectMap(args, a => a(context));
 
       command(params);
 
-      return params[thisRun.returnProperty];
+      return params[provider.returnProperty];
     };
   });
 
-  run.setExpression(ReturnExpression, (expr, thisRun) =>
+  run.setExpression(ReturnExpression, (expr, provider) =>
   {
-    const returnValue = thisRun.getCommand(expr.value);
+    const returnValue = provider.getCommand(expr.value);
 
-    return (context) => context[thisRun.returnProperty] = returnValue(context);
+    return (context) => context[provider.returnProperty] = returnValue(context);
   });
 
-  run.setExpression(TupleExpression, (expr, thisRun) =>
+  run.setExpression(TupleExpression, (expr, provider) =>
   {
-    const elements: LiveCommand[] = expr.expressions.map(e => thisRun.getCommand(e));
+    const elements: LiveCommand[] = expr.expressions.map(e => provider.getCommand(e));
 
     return (context) => elements.map(cmd => cmd(context));
   });
 
-  run.setExpression(ObjectExpression, (expr, thisRun) =>
+  run.setExpression(ObjectExpression, (expr, provider) =>
   {
-    const props: LiveCommandMap = objectMap(expr.props, e => thisRun.getCommand(e));
+    const props: LiveCommandMap = objectMap(expr.props, e => provider.getCommand(e));
 
     return (context) => objectMap(props, cmd => cmd(context));
   });
