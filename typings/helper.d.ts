@@ -1,3 +1,4 @@
+import { Color } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 export declare function saveScope<K extends string>(context: LiveContext, scope: Record<string, K>): Record<K, any>;
 export declare function restoreScope<K extends string>(context: LiveContext, saved: Record<K, any>): void;
@@ -17,6 +18,8 @@ export declare const _map: (cmd: import("expangine-runtime").Command<Record<stri
 export declare const _mapMaybe: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: Map<any, any>) => Map<any, any>;
 export declare const _object: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: () => any) => any;
 export declare const _objectMaybe: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: any) => any;
+export declare const _color: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: () => Color) => Color;
+export declare const _colorMaybe: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: any) => any;
 export declare const _date: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: () => Date) => Date;
 export declare const _dateMaybe: (cmd: import("expangine-runtime").Command<Record<string, any>, any>, context: Record<string, any>, invalidValue?: Date) => Date;
 export declare function _asList(getValue: LiveCommand, context: LiveContext): any[];
@@ -25,3 +28,4 @@ export declare function _asObject(getValue: LiveCommand, context: LiveContext): 
     value: any;
 };
 export declare function _asTuple(getValue: LiveCommand, context: any): any[];
+export declare function _colorOrNumber(getValue: LiveCommand, context: any): Color;
