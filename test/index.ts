@@ -318,5 +318,21 @@ describe('index', () => {
     expect(program({value: 5, other: 5})).toEqual('a');
   });
 
+  it('sub', () => 
+  {
+    const ex = new ExpressionBuilder();
 
-})
+    const code = ex.sub(
+      ex.object({
+        x: ex.const({y: 4})
+      }), 
+      'x', 
+      'y'
+    );
+
+    const program = LiveRuntime.getCommand(code);
+
+    expect(program({})).toEqual(4);
+  });
+
+});

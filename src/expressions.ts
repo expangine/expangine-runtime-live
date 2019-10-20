@@ -3,14 +3,47 @@ import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainE
   IfExpression, NotExpression, AndExpression, OrExpression, ForExpression, 
   WhileExpression, DefineExpression, SwitchExpression, SetExpression, 
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
-  ReturnExpression, NoExpression, TupleExpression, ObjectExpression,
-  isUndefined, objectMap } from 'expangine-runtime';
+  ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
+  isUndefined, objectMap, isObject, isArray, isString } from 'expangine-runtime';
 import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
 
 
 export default function(run: Runtime<LiveContext, LiveResult>)
 {
+
+  function hasSubs(x: any)
+  {
+    return isObject(x) || isArray(x) || isString(x);
+  }
+
+  function traversePath(context: any, value: any, path: LiveCommand[])
+  {
+    const end = path.length - 1;
+    let previous;
+    let step;
+
+    for (let i = 0; i <= end && !isUndefined(value); i++) 
+    {
+      step = path[i](context);
+      previous = value;
+
+      const next = value instanceof Map
+        ? value.get(step)
+        : value === null
+          ? undefined
+          : value[step];
+
+      if (isUndefined(next) && i !== end) 
+      {
+        return { end: false, previous, step, value: undefined };
+      }
+
+      value = next;
+    }
+
+    return { end: true, previous, step, value };
+  }
 
   run.setExpression(ConstantExpression, (expr, _thisRun) => 
   {
@@ -21,52 +54,32 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   {
     const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
 
-    return (context) => 
-    {
-      let value: any = context;
-
-      for (let i = 0; i < parts.length && !isUndefined(value); i++) 
-      {
-        const next = parts[i](context);
-
-        if (isUndefined(value[next])) 
-        {
-          return undefined;
-        }
-
-        value = value[next];
-      }
-      
-      return value;
-    };
+    return (context) => traversePath(context, context, parts).value;
   });
 
   run.setExpression(SetExpression, (expr, thisRun) => 
   {
     const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
-    const last: number = parts.length - 1;
     const getValue: LiveCommand = thisRun.getCommand(expr.value);
 
     return (context) => 
     {
-      let value: any = context;
+      const { end, previous, step } = traversePath(context, context, parts);
 
-      for (let i = 0; i < last && !isUndefined(value); i++) 
+      if (end) 
       {
-        const next = parts[i](context);
-
-        if (isUndefined(value[next])) 
+        if (previous instanceof Map)
+        {
+          previous.set(step, getValue(context));
+        }
+        else if (hasSubs(previous))
+        {
+          previous[step] = getValue(context);
+        }
+        else
         {
           return false;
         }
-
-        value = value[next];
-      }
-
-      if (!isUndefined(value)) 
-      {
-        const dest = parts[last](context);
-        value[dest] = getValue(context);
 
         return true;
       }
@@ -78,42 +91,46 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setExpression(UpdateExpression, (expr, thisRun) => 
   {
     const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
-    const last: number = parts.length - 1;
     const getValue: LiveCommand = thisRun.getCommand(expr.value);
     const currentVariable: string = expr.currentVariable;
 
     return (context) => 
     {
-      let value: any = context;
+      const { end, previous, step, value } = traversePath(context, context, parts);
 
-      for (let i = 0; i < last && !isUndefined(value); i++) 
+      if (end)
       {
-        const next = parts[i](context);
-
-        if (isUndefined(value[next])) 
+        return preserveScope(context, [currentVariable], () => 
         {
-          return false;
-        }
-
-        value = value[next];
-      }
-
-      if (!isUndefined(value)) 
-      {
-        const dest = parts[last](context);
-
-        preserveScope(context, [currentVariable], () => 
-        {
-          context[currentVariable] = value[dest];
+          context[currentVariable] = value;
         
-          value[dest] = getValue(context);
-        });
+          if (previous instanceof Map)
+          {
+            previous.set(step, getValue(context));
+          }
+          else if (hasSubs(previous))
+          {
+            previous[step] = getValue(context);
+          }
+          else
+          {
+            return false;
+          }
 
-        return true;
+          return true;
+        });
       }
 
       return false;
     };
+  });
+
+  run.setExpression(SubExpression, (expr, thisRun) => 
+  {
+    const getValue: LiveCommand = thisRun.getCommand(expr.value);
+    const parts: LiveCommand[] = expr.path.map(sub => thisRun.getCommand(sub));
+
+    return (context) => traversePath(context, getValue(context), parts).value;
   });
 
   run.setExpression(OperationExpression, (expr, thisRun) => 

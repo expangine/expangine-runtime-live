@@ -2,7 +2,7 @@ import { Runtime, Command, defs } from 'expangine-runtime';
 
 
 
-export type LiveContext = Record<string, any>;
+export type LiveContext = Record<string, any> | (any[] & Record<string, any>);
 
 export type LiveResult = any;
 
