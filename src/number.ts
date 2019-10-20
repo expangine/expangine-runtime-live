@@ -430,6 +430,19 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
     !!params.value(context)
   );
 
+  run.setOperation(ops.asColor, (params) => (context) => {
+    const value = _number(params.value, context);
+
+    // tslint:disable: no-magic-numbers no-bitwise
+    const r = value & 0xFF;
+    const g = (value >> 8) & 0xFF;
+    const b = (value >> 16) & 0xFF;
+    const a = (value >> 24) & 0xFF;
+    // tslint:enable: no-magic-numbers no-bitwise
+
+    return { r, g, b, a };
+  });
+
   run.setOperation(ops.asDate, (params) => (context) =>
     parse(params.value(context)) || new Date()
   );

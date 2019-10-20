@@ -1,4 +1,4 @@
-import { Runtime, AnyOps, parse, compare, copy, toString } from 'expangine-runtime';
+import { Runtime, AnyOps, parse, compare, copy, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
@@ -88,6 +88,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asBoolean, (params) => (context) =>
     !!params.value(context)
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    ColorType.baseType.normalize(params.value(context)) || { r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX }
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>

@@ -1,5 +1,5 @@
 
-import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean } from 'expangine-runtime';
+import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean, isColor, Color } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -110,6 +110,10 @@ export const _object = _typedDynamic<any>(isObject, () => ({}));
 
 export const _objectMaybe = _typed<any | undefined>(isObject, undefined);
 
+export const _color = _typedDynamic<Color>(isColor, () => ({ r: 255, g: 255, b: 255, a: 255 }));
+
+export const _colorMaybe = _typed<any | undefined>(isColor, undefined);
+
 export const _date = _typedDynamic<Date>(isDate, () => new Date());
 
 export const _dateMaybe = _typed<Date | undefined> (isDate, undefined);
@@ -132,4 +136,21 @@ export function _asObject(getValue: LiveCommand, context: LiveContext)
 export function _asTuple(getValue: LiveCommand, context: any)
 {
   return [ getValue(context) ];
+}
+
+export function _colorOrNumber(getValue: LiveCommand, context: any)
+{
+  const value = getValue(context);
+
+  if (isColor(value))
+  {
+    return value;
+  }
+
+  if (isNumber(value))
+  {
+    return { r: value, g: value, b: value, a: value };
+  }
+
+  return { r: 255, g: 255, b: 255, a: 255 };
 }

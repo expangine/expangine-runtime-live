@@ -1,4 +1,4 @@
-import { Runtime, MapOps, toArray, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray } from 'expangine-runtime';
+import { Runtime, MapOps, toArray, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
@@ -251,6 +251,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asDate, (params) => (context) =>
     tryCastValue(params.value, context, isDate, (v) => new Date())
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    tryCastValue(params.value, context, isColor, () =>  ({ r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX }))
   );
 
   run.setOperation(ops.asList, (params) => (context) => 

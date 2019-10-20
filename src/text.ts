@@ -1,4 +1,4 @@
-import { Runtime, TextOps, isString, parse } from 'expangine-runtime';
+import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
@@ -316,6 +316,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asBoolean, (params) => (context) =>
     /^(true|t|1|y|x)$/.test(_text(params.value, context))
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    ColorType.baseType.normalize(params.value(context)) || { r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX }
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>

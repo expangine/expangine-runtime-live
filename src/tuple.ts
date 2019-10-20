@@ -1,4 +1,4 @@
-import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject } from 'expangine-runtime';
+import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { _list, _number, _listMaybe } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
@@ -78,6 +78,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asBoolean, (params) => (context) =>
     tryCastValue(params.value, context, isBoolean, (v) => v.find ? v.find(isBoolean) || false : false)
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    tryCastValue(params.value, context, isColor, () =>  ({ r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX }))
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>

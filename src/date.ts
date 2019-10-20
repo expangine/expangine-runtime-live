@@ -1,5 +1,5 @@
 
-import { Runtime, DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate } from 'expangine-runtime';
+import { Runtime, DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _date, _text, _bool, _asList, _asMap, _asObject, _asTuple, _dateMaybe } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
@@ -245,6 +245,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asBoolean, (params) => (context) =>
     true
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    ({ r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX })
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>

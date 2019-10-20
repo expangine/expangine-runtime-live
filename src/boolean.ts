@@ -1,5 +1,5 @@
 
-import { Runtime, BooleanOps, isBoolean } from 'expangine-runtime';
+import { Runtime, BooleanOps, isBoolean, COMPONENT_MAX } from 'expangine-runtime';
 import { _bool, _asList, _asObject, _asTuple, _asMap, _boolMaybe } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
@@ -62,6 +62,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asBoolean, (params) => (context) =>
     !!params.value(context)
+  );
+
+  run.setOperation(ops.asColor, (params) => (context) =>
+    ({ r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX })
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>

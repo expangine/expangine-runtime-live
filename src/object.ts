@@ -1,4 +1,4 @@
-import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString } from 'expangine-runtime';
+import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
 import { _object, restoreScope, saveScope, _objectMaybe } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
@@ -100,6 +100,17 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setOperation(ops.asBoolean, (params) => (context) =>
     tryCastValue(params.value, context, isBoolean, () => true)
   );
+
+  run.setOperation(ops.asColor, (params) => (context) => {
+    const value = params.value(context);
+
+    if (isObject(value) && isColor(value.value)) {
+      return value.value;
+    }
+
+    return ColorType.baseType.normalize(value) 
+      || ({ r: COMPONENT_MAX, g: COMPONENT_MAX, b: COMPONENT_MAX, a: COMPONENT_MAX });
+  });
 
   run.setOperation(ops.asDate, (params) => (context) =>
     tryCastValue(params.value, context, isDate, () => new Date())
