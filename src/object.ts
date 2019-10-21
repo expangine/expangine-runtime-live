@@ -1,5 +1,5 @@
 import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
-import { _object, restoreScope, saveScope, _objectMaybe } from './helper';
+import { _object, restoreScope, saveScope, _objectMaybe, _optional } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -81,9 +81,9 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const merged = {};
     mergeValues(merged, params.a(context));
     mergeValues(merged, params.b(context));
-    mergeValues(merged, params.c(context));
-    mergeValues(merged, params.d(context));
-    mergeValues(merged, params.e(context));
+    mergeValues(merged, _optional(params.c, context));
+    mergeValues(merged, _optional(params.d, context));
+    mergeValues(merged, _optional(params.e, context));
 
     return merged;
   });

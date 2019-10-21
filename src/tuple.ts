@@ -1,5 +1,5 @@
 import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject, isColor, COMPONENT_MAX } from 'expangine-runtime';
-import { _list, _number, _listMaybe } from './helper';
+import { _list, _number, _listMaybe, _optional } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -44,9 +44,9 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
     buildValues(built, params.a(context));
     buildValues(built, params.b(context));
-    buildValues(built, params.c(context));
-    buildValues(built, params.d(context));
-    buildValues(built, params.e(context));
+    buildValues(built, _optional(params.c, context));
+    buildValues(built, _optional(params.d, context));
+    buildValues(built, _optional(params.e, context));
 
     return built;
   });
