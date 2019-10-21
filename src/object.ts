@@ -61,6 +61,33 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     copy(_object(params.object, context))
   );
 
+  function mergeValues(target: any, merge: any) 
+  {
+    if (isObject(merge)) 
+    {
+      for (const prop in merge) 
+      {
+        const value = merge[prop];
+
+        if (value !== undefined && value !== null) 
+        {
+          target[prop] = value;
+        }
+      }
+    }
+  }
+
+  run.setOperation(ops.merge, (params) => (context) => {
+    const merged = {};
+    mergeValues(merged, params.a(context));
+    mergeValues(merged, params.b(context));
+    mergeValues(merged, params.c(context));
+    mergeValues(merged, params.d(context));
+    mergeValues(merged, params.e(context));
+
+    return merged;
+  });
+
   // Comparisons
 
   run.setOperation(ops.isValid, (params) => (context) => 

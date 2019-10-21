@@ -27,6 +27,30 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     copy(params.value(context))
   );
 
+  function buildValues(built: any[], values: any)
+  {
+    if (isArray(values))
+    {
+      built.push(...values);
+    }
+    else
+    {
+      built.push(values);
+    }
+  }
+
+  run.setOperation(ops.build, (params) => (context) => {
+    const built: any[] = [];
+
+    buildValues(built, params.a(context));
+    buildValues(built, params.b(context));
+    buildValues(built, params.c(context));
+    buildValues(built, params.d(context));
+    buildValues(built, params.e(context));
+
+    return built;
+  });
+
   run.setOperation(ops.get, (params) => (context) =>
     _list(params.value, context)[_number(params.index, context, 0)]
   );
