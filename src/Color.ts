@@ -289,7 +289,12 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setOperation(ops.named, (params) => (context) => {
     const value = _color(params.name, context);
 
-    return value;
+    return {
+      r: value.r,
+      g: value.g,
+      b: value.b,
+      a: value.a,
+    };
   });
 
   run.setOperation(ops.getName, (params) => (context) => {
