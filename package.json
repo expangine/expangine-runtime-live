@@ -1,5 +1,6 @@
 {
   "name": "expangine-runtime-live",
+  "license": "GPL-3.0-or-later",
   "version": "0.0.1",
   "description": "A runtime implementation for expangine-runtime which processes expressions locally/live",
   "main": "dist/expangine-runtime-live.js",
@@ -12,7 +13,6 @@
   "authors": [
     "Philip Diffenderfer <pdiffenderfer@gmail.com>"
   ],
-  "license": "MIT",
   "engines": {
     "node": ">=6.9"
   },
