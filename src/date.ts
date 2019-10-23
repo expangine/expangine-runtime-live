@@ -88,7 +88,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setOperation(ops.add, (params) => (context) => {
     const value = _date(params.value, context);
     const unit = _text(params.unit, context, 'millis');
-    const amount = _number(params.amount, context, 0);
+    const amount = _number(params.amount, context, 1);
 
     return unit in add ? add[unit](value, amount) : value;
   });
@@ -96,7 +96,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   run.setOperation(ops.sub, (params) => (context) => {
     const value = _date(params.value, context);
     const unit = _text(params.unit, context, 'millis');
-    const amount = _number(params.amount, context, 0);
+    const amount = _number(params.amount, context, 1);
 
     return unit in add ? add[unit](value, -amount) : value;
   });
