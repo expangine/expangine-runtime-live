@@ -78,27 +78,42 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   });
 
   run.setOperation(ops.set, (params) => (context) => {
-    const value = _date(params.value, context);
+    let value = _date(params.value, context);
     const prop = _text(params.property, context, 'timestamp');
     const update = _number(params.set, context, 0);
 
-    return prop in setters ? setters[prop](value, update) : value;
+    if (prop in setters) {
+      value = new Date(value.getTime());
+      setters[prop](value, update);
+    }
+
+    return value;
   });
 
   run.setOperation(ops.add, (params) => (context) => {
-    const value = _date(params.value, context);
+    let value = _date(params.value, context);
     const unit = _text(params.unit, context, 'millis');
     const amount = _number(params.amount, context, 1);
 
-    return unit in add ? add[unit](value, amount) : value;
+    if (unit in add) {
+      value = new Date(value.getTime());
+      add[unit](value, amount);
+    }
+
+    return value;
   });
 
   run.setOperation(ops.sub, (params) => (context) => {
-    const value = _date(params.value, context);
+    let value = _date(params.value, context);
     const unit = _text(params.unit, context, 'millis');
     const amount = _number(params.amount, context, 1);
 
-    return unit in add ? add[unit](value, -amount) : value;
+    if (unit in add) {
+      value = new Date(value.getTime());
+      add[unit](value, -amount);
+    }
+
+    return value;
   });
 
   run.setOperation(ops.startOf, (params) => (context) => {
