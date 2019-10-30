@@ -200,15 +200,18 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const pattern = _text(params.pattern, context);
     const ignoreCase = _bool(params.ignoreCase, context, false);
     
-    const regexPattern = pattern
+    const valueCased = ignoreCase ? value.toLowerCase() : value;
+    const patternCased = ignoreCase ? pattern.toLowerCase() : pattern;
+
+    const regexPattern = patternCased
       .split('%')
       .map(x => x ? x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : x)
       .join('.*')
     ;
 
-    const regex = new RegExp('^' + regexPattern + '$', ignoreCase ? 'i' : undefined);
+    const regex = new RegExp('^' + regexPattern + '$');
 
-    return !!value.match(regex);
+    return !!valueCased.match(regex);
   });
 
   run.setOperation(ops.pad, (params) => (context) => {
