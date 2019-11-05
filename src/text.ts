@@ -1,5 +1,5 @@
 import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
-import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe } from './helper';
+import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -62,7 +62,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.chars, (params) => (context) => 
-    _text(params.value, context)
+    _text(params.value, context).split('')
   );
 
   run.setOperation(ops.sub, (params) => (context) => 
@@ -244,6 +244,82 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     return value;
   });
 
+  run.setOperation(ops.regexTest, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, false, params.ignoreCase, params.multiline);
+    
+    return regex.test(value);
+  });
+
+  run.setOperation(ops.regexSplit, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, false, params.ignoreCase, params.multiline);
+    const limit = _numberMaybe(params.limit, context);
+
+    return value.split(regex, limit);
+  });
+
+  run.setOperation(ops.regexMatch, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, true, params.ignoreCase, params.multiline);
+    
+    return value.match(regex);
+  });
+
+  run.setOperation(ops.regexMatchAll, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, true, params.ignoreCase, params.multiline);
+    const matches: Array<{ index: number, lastIndex: number, input: string, groups: string[] }> = [];
+    let match: RegExpExecArray;
+
+    // tslint:disable-next-line: no-conditional-assignment
+    while ((match = regex.exec(value)) !== null) {
+      matches.push({
+        index: match.index,
+        lastIndex: regex.lastIndex,
+        input: match.input,
+        groups: match.slice(),
+      });
+    }
+
+    return matches;
+  });
+
+  run.setOperation(ops.regexReplace, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, params.all, params.ignoreCase, params.multiline);
+    const replacement = _text(params.replacement, context);
+
+    return value.replace(regex, replacement);
+  });
+
+  run.setOperation(ops.regexReplaceDynamic, (params, scope) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, params.all, params.ignoreCase, params.multiline);
+
+    return preserveScope(context, [scope.match], () => 
+      value.replace(regex, (...givenArgs: any[]) => {
+        const args: any[] = Array.prototype.slice.call(givenArgs);
+        args.pop();
+
+        const input = args.shift();
+        const index = parseInt(args.pop());
+        const lastIndex = regex.lastIndex;
+        const groups = args;
+        
+        context[scope.match] = { index, lastIndex, input, groups };
+
+        return params.replace(context);
+      })
+    );
+  });
+
+  run.setOperation(ops.regexIndexOf, (params) => (context) => {
+    const value = _text(params.value, context);
+    const regex = _regex(params.regex, context, true, params.ignoreCase, params.multiline);
+    
+    return value.search(regex);
+  });
 
   // Other
 

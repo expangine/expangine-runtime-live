@@ -1,5 +1,5 @@
 
-import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean, isColor, Color } from 'expangine-runtime';
+import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -153,4 +153,22 @@ export function _colorOrNumber(getValue: LiveCommand, context: any)
   }
 
   return { r: 255, g: 255, b: 255, a: 255 };
+}
+
+export function _regex(getPattern: LiveCommand, context: any, g?: LiveCommand | boolean, i?: LiveCommand | boolean, m?: LiveCommand | boolean): RegExp
+{
+  return new RegExp(_text(getPattern, context), 
+    _regexFlag(g, context, false) ? 'g' : '' +
+    _regexFlag(m, context, false) ? 'm' : '' +
+    _regexFlag(i, context, false) ? 'i' : '' 
+  );
+}
+
+export function _regexFlag(flag: LiveCommand | boolean | undefined, context: any, defaultValue: boolean = false)
+{
+  return isBoolean(flag)
+    ? flag
+    : isFunction(flag)
+      ? !!flag(context)
+      : defaultValue;
 }

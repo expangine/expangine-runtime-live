@@ -29,3 +29,5 @@ export declare function _asObject(getValue: LiveCommand, context: LiveContext): 
 };
 export declare function _asTuple(getValue: LiveCommand, context: any): any[];
 export declare function _colorOrNumber(getValue: LiveCommand, context: any): Color;
+export declare function _regex(getPattern: LiveCommand, context: any, g?: LiveCommand | boolean, i?: LiveCommand | boolean, m?: LiveCommand | boolean): RegExp;
+export declare function _regexFlag(flag: LiveCommand | boolean | undefined, context: any, defaultValue?: boolean): boolean;
