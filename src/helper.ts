@@ -158,9 +158,9 @@ export function _colorOrNumber(getValue: LiveCommand, context: any)
 export function _regex(getPattern: LiveCommand, context: any, g?: LiveCommand | boolean, i?: LiveCommand | boolean, m?: LiveCommand | boolean): RegExp
 {
   return new RegExp(_text(getPattern, context), 
-    _regexFlag(g, context, false) ? 'g' : '' +
-    _regexFlag(m, context, false) ? 'm' : '' +
-    _regexFlag(i, context, false) ? 'i' : '' 
+    (_regexFlag(g, context, false) ? 'g' : '') +
+    (_regexFlag(m, context, false) ? 'm' : '') +
+    (_regexFlag(i, context, false) ? 'i' : '') 
   );
 }
 
