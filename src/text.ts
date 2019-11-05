@@ -272,6 +272,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const matches: Array<{ index: number, lastIndex: number, input: string, groups: string[] }> = [];
     let match: RegExpExecArray;
 
+    // no pattern given, this results in an infinite loop
+    if (regex.source === '(?:)') {
+      return matches;
+    }
+
     // tslint:disable-next-line: no-conditional-assignment
     while ((match = regex.exec(value)) !== null) {
       matches.push({
