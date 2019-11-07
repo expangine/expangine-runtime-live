@@ -32,7 +32,8 @@ module.exports = {
     },
 
     externals: {
-      'expangine-runtime': 'expangine-runtime'
+      'expangine-runtime': 'expangine-runtime',
+      'metaphone': 'metaphone',
     },
 
     module: {
