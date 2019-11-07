@@ -52,7 +52,8 @@
     ]
   },
   "dependencies": {
-    "expangine-runtime": "git+https://github.com/expangine/expangine-runtime.git#master"
+    "expangine-runtime": "git+https://github.com/expangine/expangine-runtime.git#master",
+    "metaphone": "1.0.5"
   },
   "devDependencies": {
     "@types/jest": "24.0.11",
