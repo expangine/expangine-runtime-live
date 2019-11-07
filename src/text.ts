@@ -1,4 +1,4 @@
-import * as metaphone from 'metaphone';
+import metaphone from 'metaphone';
 import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';

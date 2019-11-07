@@ -1,3 +1,6 @@
 
+declare module 'metaphone' {
+  export function metaphone(x: string): string;
 
-declare module 'metaphone';
+  export default function metaphone(x: string): string;
+}
