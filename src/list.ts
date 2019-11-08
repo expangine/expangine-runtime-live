@@ -1,5 +1,5 @@
 import { Runtime, ListOps, getCompare, isBoolean, isEmpty, isDate, isNumber, isString, isArray, COMPONENT_MAX, isColor } from 'expangine-runtime';
-import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe } from './helper';
+import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe, preserveScope } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -725,6 +725,169 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
       return map;
     });
+  });
+
+  // Joins
+
+  run.setOperation(ops.joinInner, (params, scope) => (context) => {
+    const a = _list(params.a, context);
+    const b = _list(params.b, context);
+
+    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+      const results: any[] = [];
+
+      for (const itemA of a) {
+        for (const itemB of b) {
+          context[scope.onA] = itemA;
+          context[scope.onB] = itemB;
+
+          if (params.on(context)){ 
+            context[scope.joinA] = itemA;
+            context[scope.joinB] = itemB;
+
+            results.push(params.join(context));
+          }
+        }
+      }
+
+      return results;
+    }); 
+  });
+
+  run.setOperation(ops.joinLeft, (params, scope) => (context) => {
+    const a = _list(params.a, context);
+    const b = _list(params.b, context);
+
+    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+      const results: any[] = [];
+
+      for (const itemA of a) {
+        let added = false;
+        
+        for (const itemB of b) {
+          context[scope.onA] = itemA;
+          context[scope.onB] = itemB;
+
+          if (params.on(context)){ 
+            context[scope.joinA] = itemA;
+            context[scope.joinB] = itemB;
+
+            results.push(params.join(context));
+            added = true;
+          }
+        }
+
+        if (!added) {
+          context[scope.joinA] = itemA;
+          context[scope.joinB] = undefined;
+          results.push(params.join(context));
+        }
+      }
+
+      return results;
+    }); 
+  });
+
+  run.setOperation(ops.joinRight, (params, scope) => (context) => {
+    const a = _list(params.a, context);
+    const b = _list(params.b, context);
+
+    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+      const results: any[] = [];
+
+      for (const itemB of b) {
+        let added = false;
+        
+        for (const itemA of a) {
+          context[scope.onA] = itemA;
+          context[scope.onB] = itemB;
+
+          if (params.on(context)){ 
+            context[scope.joinA] = itemA;
+            context[scope.joinB] = itemB;
+
+            results.push(params.join(context));
+            added = true;
+          }
+        }
+
+        if (!added) {
+          context[scope.joinA] = undefined;
+          context[scope.joinB] = itemB;
+          results.push(params.join(context));
+        }
+      }
+
+      return results;
+    }); 
+  });
+
+  run.setOperation(ops.joinFull, (params, scope) => (context) => {
+    const a = _list(params.a, context);
+    const b = _list(params.b, context);
+
+    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+      const results: any[] = [];
+      const joined: boolean[] = [];
+
+      for (const itemA of a) {
+        let added = false;
+        
+        for (let i = 0; i < b.length; i++) {
+          const itemB = b[i];
+
+          context[scope.onA] = itemA;
+          context[scope.onB] = itemB;
+
+          if (params.on(context)){ 
+            context[scope.joinA] = itemA;
+            context[scope.joinB] = itemB;
+
+            results.push(params.join(context));
+            joined[i] = true;
+            added = true;
+          }
+        }
+
+        if (!added) {
+          context[scope.joinA] = itemA;
+          context[scope.joinB] = undefined;
+          results.push(params.join(context));
+        }
+      }
+
+      for (let i = 0; i < b.length; i++) {
+        if (!joined[i]) {
+          const itemB = b[i];
+
+          context[scope.joinA] = undefined;
+          context[scope.joinB] = itemB;
+          results.push(params.join(context));
+        }
+      }
+
+      return results;
+    }); 
+  });
+
+  run.setOperation(ops.joinCross, (params, scope) => (context) => {
+    const a = _list(params.a, context);
+    const b = _list(params.b, context);
+
+    return preserveScope(context, [scope.joinA, scope.joinB], () => {
+      const results: any[] = [];
+    
+      for (const itemA of a) {
+        for (const itemB of b) {
+          context[scope.joinA] = itemA;
+          context[scope.joinB] = itemB;
+
+          results.push(params.join(context));
+        }
+      }
+
+      return results;
+    }); 
   });
 
   // Aggregates
