@@ -411,7 +411,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.asDate, (params) => (context) =>
-    parse(params.value(context)) || new Date()
+    parse(params.value(context), true) || new Date()
   );
 
   run.setOperation(ops.asList, (params) => (context) => 
