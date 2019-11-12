@@ -218,7 +218,7 @@ describe('index', () => {
       ex.if(ex.op(NumberOps.isDivisible, {
           value: ex.get('x'),
           by: 2 }))
-        .then(
+        .than(
           ex.return(true
         )),
       ex.return(false),
@@ -301,9 +301,9 @@ describe('index', () => {
         .case(1)
         .case(2)
         .case(ex.get('other'))
-          .then('a')
+          .than('a')
         .case(3)
-          .then('b')
+          .than('b')
         .default('c')
     ;
 
