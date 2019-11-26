@@ -21,4 +21,15 @@ describe('text', () => {
     expect(program({input: 'Philip Diffenderfer'})).toEqual('FLPTFNTRFR');
   });
 
+  it('toUpper', () =>
+  {
+    const ex = new ExpressionBuilder();
+
+    const code = ex.computed('text:toUpper', ex.get('value'));
+
+    const program = LiveRuntime.getCommand(code);
+
+    expect(program({value: 'Phil'})).toEqual('PHIL');
+  });
+
 });

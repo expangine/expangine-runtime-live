@@ -1,4 +1,8 @@
 import metaphone from 'metaphone';
+import Crypto from 'simple-crypto-js';
+import { Md5 } from 'ts-md5/dist/md5';
+
+
 import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
@@ -337,6 +341,42 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
 
   // Formatters
+
+  run.setOperation(ops.base64, (params) => (context) => 
+    btoa(_text(params.value, context))
+  );
+
+  run.setOperation(ops.unbase64, (params) => (context) => 
+    atob(_text(params.value, context))
+  );
+
+  run.setOperation(ops.encodeURI, (params) => (context) => 
+    encodeURI(_text(params.value, context))
+  );
+
+  run.setOperation(ops.decodeURI, (params) => (context) => 
+    decodeURI(_text(params.value, context))
+  );
+
+  run.setOperation(ops.encodeURIComponent, (params) => (context) => 
+    encodeURIComponent(_text(params.value, context))
+  );
+
+  run.setOperation(ops.decodeURIComponent, (params) => (context) => 
+    decodeURIComponent(_text(params.value, context))
+  );
+
+  run.setOperation(ops.md5, (params) => (context) => 
+    Md5.hashStr(_text(params.value, context))
+  );
+
+  run.setOperation(ops.encrypt, (params) => (context) => 
+    new Crypto(_text(params.secret, context)).encrypt(_text(params.value, context))
+  );
+
+  run.setOperation(ops.decrypt, (params) => (context) => 
+    new Crypto(_text(params.secret, context)).decrypt(_text(params.value, context))
+  );
 
   run.setOperation(ops.toNumber, (params) => (context) => {
     const value = parseFloat(_text(params.value, context));

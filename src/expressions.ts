@@ -4,7 +4,7 @@ import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainE
   WhileExpression, DefineExpression, SwitchExpression, SetExpression, 
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
-  isUndefined, objectMap, isObject, isArray, isString, copy } from 'expangine-runtime';
+  ComputedExpression, isUndefined, objectMap, isObject, isArray, isString, copy } from 'expangine-runtime';
 import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
 
@@ -131,6 +131,31 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
 
     return (context) => traversePath(context, getValue(context), parts).value;
+  });
+
+  run.setExpression(ComputedExpression, (expr, provider) =>
+  {
+    const comp = provider.getComputed(expr.name);
+
+    if (!comp)
+    {
+      throw new Error(`Computed ${expr.name} is not defined in the given runtime.`);
+    }
+
+    const op = provider.getOperation(comp.op);
+    const params: LiveCommandMap = {
+      ...objectMap(comp.params, (constant) => () => constant),
+      [comp.value]: provider.getCommand(expr.expression),
+    };
+
+    const operationCommand = op(params, {});
+    
+    return (context) =>
+    {
+      if (provider.returnProperty in context) return;
+
+      return operationCommand(context);
+    };
   });
 
   run.setExpression(OperationExpression, (expr, provider) => 
