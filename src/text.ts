@@ -18,6 +18,15 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     ''
   );
 
+  run.setOperation(ops.uuid, (params) => {
+    function S4() {
+      // tslint:disable-next-line: no-bitwise no-magic-numbers
+      return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+    }
+
+    return (context) => (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+  });
+
   // Operations
 
   run.setOperation(ops.maybe, (params) => (context) => 
@@ -434,6 +443,12 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const value = _text(params.value, context);
 
     return value.localeCompare(value.toUpperCase()) === 0;
+  });
+
+  run.setOperation(ops.isUuid, (params) => (context) => {
+    const value = _text(params.value, context);
+
+    return value.match(/^[\da-z]{8}\-[\da-z]{4}\-[\da-z]{4}\-[\da-z]{4}\-[\da-z]{12}$/i);
   });
 
   // Casts
