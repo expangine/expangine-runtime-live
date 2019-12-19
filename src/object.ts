@@ -1,5 +1,5 @@
 import { Runtime, ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
-import { _object, restoreScope, saveScope, _objectMaybe, _optional } from './helper';
+import { _object, restoreScope, saveScope, _objectMaybe, _optional, _asSet } from './helper';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -165,6 +165,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     tryCastValue(params.value, context, isArray, v => [v])
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 }

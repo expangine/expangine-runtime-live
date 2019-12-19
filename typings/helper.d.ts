@@ -16,6 +16,8 @@ export declare const _list: (cmd: import("expangine-runtime").Command<LiveContex
 export declare const _listMaybe: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: any[]) => any[];
 export declare const _map: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: () => Map<any, any>) => Map<any, any>;
 export declare const _mapMaybe: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: Map<any, any>) => Map<any, any>;
+export declare const _set: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: () => Set<any>) => Set<any>;
+export declare const _setMaybe: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: Set<any>) => Set<any>;
 export declare const _object: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: () => any) => any;
 export declare const _objectMaybe: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: any) => any;
 export declare const _color: (cmd: import("expangine-runtime").Command<LiveContext, any>, context: LiveContext, invalidValue?: () => Color) => Color;
@@ -28,6 +30,7 @@ export declare function _asObject(getValue: LiveCommand, context: LiveContext): 
     value: any;
 };
 export declare function _asTuple(getValue: LiveCommand, context: any): any[];
+export declare function _asSet(getValue: LiveCommand, context: any): Set<any>;
 export declare function _colorOrNumber(getValue: LiveCommand, context: any): Color;
 export declare function _regex(getPattern: LiveCommand, context: any, g?: LiveCommand | boolean, i?: LiveCommand | boolean, m?: LiveCommand | boolean): RegExp;
 export declare function _regexFlag(flag: LiveCommand | boolean | undefined, context: any, defaultValue?: boolean): boolean;

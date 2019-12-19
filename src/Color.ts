@@ -1,5 +1,5 @@
 import { Runtime, ColorOps, COMPONENT_MAX, Color, clampComponent, ColorType, ColorSpaceHSL, ColorNames, isColor, ColorSpaceRGB } from 'expangine-runtime';
-import { _color, _colorMaybe, _number, saveScope, restoreScope, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple } from './helper';
+import { _color, _colorMaybe, _number, saveScope, restoreScope, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -406,6 +406,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     _asTuple(params.value, context)
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 }

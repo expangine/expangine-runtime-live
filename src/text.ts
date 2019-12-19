@@ -4,7 +4,7 @@ import { Md5 } from 'ts-md5/dist/md5';
 
 
 import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
-import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope } from './helper';
+import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope, _asSet } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -493,6 +493,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     _asTuple(params.value, context)
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 }

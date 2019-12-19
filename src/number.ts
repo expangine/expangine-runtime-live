@@ -1,5 +1,5 @@
 import { Runtime, NumberOps, parse, isNumber, isUndefined, isString, isWhole } from 'expangine-runtime';
-import { _number, _bool, _text, _numberMaybe, _textMaybe, _asTuple, _asObject, _asMap, _asList } from './helper';
+import { _number, _bool, _text, _numberMaybe, _textMaybe, _asTuple, _asObject, _asMap, _asList, _asSet } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -469,6 +469,10 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     _asTuple(params.value, context)
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 }

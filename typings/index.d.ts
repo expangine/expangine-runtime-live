@@ -8,6 +8,7 @@ import { default as addLiveList } from './List';
 import { default as addLiveMap } from './Map';
 import { default as addLiveNumber } from './Number';
 import { default as addLiveObject } from './Object';
+import { default as addLiveSet } from './Set';
 import { default as addLiveText } from './Text';
 import { default as addLiveTuple } from './Tuple';
-export { addLiveExpressions, addLiveAny, addLiveBoolean, addLiveColor, addLiveDate, addLiveList, addLiveMap, addLiveNumber, addLiveObject, addLiveText, addLiveTuple, };
+export { addLiveExpressions, addLiveAny, addLiveBoolean, addLiveColor, addLiveDate, addLiveList, addLiveMap, addLiveNumber, addLiveObject, addLiveSet, addLiveText, addLiveTuple, };

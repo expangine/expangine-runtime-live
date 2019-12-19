@@ -10,6 +10,7 @@ import { default as addLiveList } from './List';
 import { default as addLiveMap } from './Map';
 import { default as addLiveNumber } from './Number';
 import { default as addLiveObject } from './Object';
+import { default as addLiveSet } from './Set';
 import { default as addLiveText } from './Text';
 import { default as addLiveTuple } from './Tuple';
 
@@ -23,6 +24,7 @@ addLiveList(LiveRuntime);
 addLiveMap(LiveRuntime);
 addLiveNumber(LiveRuntime);
 addLiveObject(LiveRuntime);
+addLiveSet(LiveRuntime);
 addLiveText(LiveRuntime);
 addLiveTuple(LiveRuntime);
 
@@ -37,6 +39,7 @@ export {
   addLiveMap,
   addLiveNumber,
   addLiveObject,
+  addLiveSet,
   addLiveText,
   addLiveTuple,
 };

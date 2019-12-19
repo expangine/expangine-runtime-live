@@ -1,5 +1,5 @@
 
-import { isNumber, isString, isArray, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
+import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -106,6 +106,10 @@ export const _map = _typedDynamic<Map<any, any>> (isMap, () => new Map());
 
 export const _mapMaybe = _typed<Map<any, any> | undefined> (isMap, undefined);
 
+export const _set = _typedDynamic<Set<any>> (isSet, () => new Set());
+
+export const _setMaybe = _typed<Set<any> | undefined> (isSet, undefined);
+
 export const _object = _typedDynamic<any>(isObject, () => ({}));
 
 export const _objectMaybe = _typed<any | undefined>(isObject, undefined);
@@ -136,6 +140,11 @@ export function _asObject(getValue: LiveCommand, context: LiveContext)
 export function _asTuple(getValue: LiveCommand, context: any)
 {
   return [ getValue(context) ];
+}
+
+export function _asSet(getValue: LiveCommand, context: any)
+{
+  return new Set([ getValue(context) ]);
 }
 
 export function _colorOrNumber(getValue: LiveCommand, context: any)

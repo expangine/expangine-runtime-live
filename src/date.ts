@@ -1,6 +1,6 @@
 
 import { Runtime, DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate, COMPONENT_MAX } from 'expangine-runtime';
-import { _number, _date, _text, _bool, _asList, _asMap, _asObject, _asTuple, _dateMaybe } from './helper';
+import { _number, _date, _text, _bool, _asList, _asMap, _asObject, _asTuple, _dateMaybe, _asSet } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -292,6 +292,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     _asTuple(params.value, context)
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 }

@@ -1,5 +1,5 @@
 import { Runtime, AnyOps, parse, compare, copy, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
-import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope } from './helper';
+import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope, _asSet } from './helper';
 import { LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -122,6 +122,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     _asTuple(params.value, context)
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    _asSet(params.value, context)
   );
 
 };

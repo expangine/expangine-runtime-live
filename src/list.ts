@@ -1213,6 +1213,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     _asTuple(params.value, context)
   );
 
+  run.setOperation(ops.asSet, (params) => (context) => 
+    new Set(_list(params.value, context))
+  );
+
 }
 
 function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)

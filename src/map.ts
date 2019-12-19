@@ -1,4 +1,4 @@
-import { Runtime, MapOps, toArray, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
+import { Runtime, MapOps, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
@@ -53,11 +53,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.keys, (params) => (context) =>
-    toArray(_map(params.map, context).keys())
+    Array.from(_map(params.map, context).keys())
   );
 
   run.setOperation(ops.values, (params) => (context) =>
-    toArray(_map(params.map, context).values())
+    Array.from(_map(params.map, context).values())
   );
 
   run.setOperation(ops.entries, (params) => (context) => {
@@ -132,7 +132,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const entries = map.entries();
 
     if (!params.deepCopy && !params.deepCopyKey) {
-      return new Map(toArray(entries));
+      return new Map(entries);
     }
     const entriesCopy: [any, any][] = [];
     handleMap(map, context, scope, () => {  
@@ -156,7 +156,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     const entries = map.entries();
 
     if (!params.transform && !params.transformKey) {
-      return new Map(toArray(entries));
+      return new Map(entries);
     }
     const entriesTransformed: [any, any][] = [];
     handleMap(map, context, scope, () => {  
@@ -258,7 +258,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.asList, (params) => (context) => 
-    toArray(_map(params.value, context).values())
+    Array.from(_map(params.value, context).values())
   );
 
   run.setOperation(ops.asMap, (params) => (context) => 
@@ -279,6 +279,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
   run.setOperation(ops.asTuple, (params) => (context) => 
     tryCastValue(params.value, context, isArray, (v) => [v])
+  );
+
+  run.setOperation(ops.asSet, (params) => (context) => 
+    new Set(_map(params.value, context).values())
   );
 
 }
