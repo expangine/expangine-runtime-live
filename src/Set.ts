@@ -209,13 +209,22 @@ function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: 
 {
   const val = value(context);
 
-  if (!isSet(val) || val.size === 0) {
+  if (!isSet(val) || val.size === 0) 
+  {
     return otherwise(val);
   }
 
-  const first = val[Symbol.iterator]().next().value;
+  const iterator = val[Symbol.iterator]();
 
-  return isType(first) ? first : otherwise(val);
+  for (const item of iterator)
+  {
+    if (isType(item))
+    {
+      return item;
+    }
+  }
+
+  return otherwise(val);
 }
 
 function handleSet<R>(map: Set<any>, context: LiveContext, scope: Record<string, string>, handle: (map: Set<any>) => R): R
