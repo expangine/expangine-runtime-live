@@ -71,7 +71,7 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
   );
 
   run.setOperation(ops.div, (params) => (context) => 
-    _number(params.value, context) % _number(params.divisor, context)
+    _number(params.value, context) / _number(params.divisor, context)
   );
 
   run.setOperation(ops.mod, (params) => (context) => 
