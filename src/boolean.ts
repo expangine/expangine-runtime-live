@@ -54,6 +54,14 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     !_bool(params.value, context, false)
   );
 
+  run.setOperation(ops.isEqual, (params) => (context) => 
+    _bool(params.value, context, false) === _bool(params.test, context, false)
+  );
+
+  run.setOperation(ops.isNotEqual, (params) => (context) => 
+    _bool(params.value, context, false) !== _bool(params.test, context, false)
+  );
+
   // Casts
 
   run.setOperation(ops.asAny, (params) => (context) =>

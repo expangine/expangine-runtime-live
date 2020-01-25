@@ -17,6 +17,14 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     new Set()
   );
 
+  run.setOperation(ops.createLike, (params) => (context) =>
+    new Set()
+  );
+
+  run.setOperation(ops.createFor, (params) => (context) =>
+    new Set()
+  );
+
   // Operations
 
   run.setOperation(ops.maybe, (params) => (context) => 

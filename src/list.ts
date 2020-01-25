@@ -17,6 +17,14 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     []
   );
 
+  run.setOperation(ops.createLike, (params) => (context) => 
+    []
+  );
+
+  run.setOperation(ops.createFor, (params) => (context) => 
+    []
+  );
+
   // Operations
 
   run.setOperation(ops.maybe, (params) => (context) => 
@@ -177,6 +185,13 @@ export default function(run: Runtime<LiveContext, LiveResult>)
       }
     )
   );
+
+  run.setOperation(ops.clear, (params, scope) => (context) => {
+    const list = _list(params.list, context);
+    list.length = 0;
+    
+    return list;
+  });
 
   run.setOperation(ops.contains, (params, scope) => (context) =>
     handleListIsEqual(
