@@ -371,7 +371,7 @@ export default function(run: Runtime<LiveContext, LiveResult>)
           return;
         }
 
-        while ((dir === 1 ? i <= stop : i >= stop) && iterations++ < max) 
+        while ((dir === 1 ? i < stop : i > stop) && iterations++ < max) 
         {
           context[variable] = i;
           last = body(context);
