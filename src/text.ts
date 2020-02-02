@@ -1,5 +1,5 @@
 import metaphone from 'metaphone';
-import Crypto from 'simple-crypto-js';
+import SimpleCrypto from 'simple-crypto-js';
 import { Md5 } from 'ts-md5/dist/md5';
 
 
@@ -380,11 +380,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.encrypt, (params) => (context) => 
-    new Crypto(_text(params.secret, context)).encrypt(_text(params.value, context))
+    new SimpleCrypto(_text(params.secret, context)).encrypt(_text(params.value, context))
   );
 
   run.setOperation(ops.decrypt, (params) => (context) => 
-    new Crypto(_text(params.secret, context)).decrypt(_text(params.value, context))
+    new SimpleCrypto(_text(params.secret, context)).decrypt(_text(params.value, context))
   );
 
   run.setOperation(ops.toNumber, (params) => (context) => {
@@ -478,7 +478,9 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   );
 
   run.setOperation(ops.asNumber, (params) => (context) => {
-    const value = parseFloat(params.value(context));
+    const text = _text(params.value, context, '0');
+    const withoutSymbols = text.replace(/[\$,%]/g, '');
+    const value = parseFloat(withoutSymbols);
 
     return isFinite(value) ? value : 0;
   });

@@ -32,4 +32,18 @@ describe('text', () => {
     expect(program({value: 'Phil'})).toEqual('PHIL');
   });
 
+  it('asNumber', () =>
+  {
+    const ex = new ExpressionBuilder();
+
+    const code = ex.op(TextOps.asNumber, { value: ex.get('value') });
+
+    const program = LiveRuntime.getCommand(code);
+
+    expect(program({value: '100'})).toEqual(100);
+    expect(program({value: '100%'})).toEqual(100);
+    expect(program({value: '$1,100'})).toEqual(1100);
+    expect(program({value: '$2,100.25'})).toEqual(2100.25);
+  });
+
 });

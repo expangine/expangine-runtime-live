@@ -4,6 +4,9 @@ import { LiveContext, LiveResult } from './LiveRuntime';
 
 
 const DEFAULT_BASE = 10;
+const SEPARATOR_NUMBER = 1.5;
+const SEPARATOR_OFFSET = 3;
+const PERCENT_SCALE = 100;
 
 export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number = 0.000001)
 {
@@ -308,40 +311,37 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
     if (!isFinite(value)) {
       return value;
     }
-    const prefix = _text(params.prefix, context);
-    const suffix = _text(params.suffix, context);
-    const minPlaces = _numberMaybe(params.minPlaces, context);
-    const maxPlaces = _numberMaybe(params.maxPlaces, context);
-    const useExponent = _bool(params.useExponent, context, false);
-    const separator = _textMaybe(params.thousandSeparator, context);
-    
-    let to = '';
 
-    if (useExponent) {
-      to = value.toExponential(isUndefined(maxPlaces) ? minPlaces : maxPlaces);
-    } else if (isNumber(minPlaces)) {
-      to = value.toFixed(minPlaces);
-    } else {
-      to = value.toPrecision(maxPlaces);
+    return format(value, {
+      prefix: _text(params.prefix, context),
+      suffix:_text(params.suffix, context),
+      minPlaces: _numberMaybe(params.minPlaces, context),
+      maxPlaces: _numberMaybe(params.maxPlaces, context),
+      useExponent: _bool(params.useExponent, context, false),
+      separator: _textMaybe(params.thousandSeparator, context),
+    });
+  });
+
+  run.setOperation(ops.toPercent, (params) => (context) => {
+    const value = _number(params.value, context);
+    if (!isFinite(value)) {
+      return value;
     }
 
-    const SEPARATOR_NUMBER = 1.1;
-    const SEPARATOR_OFFSET = 3;
+    return format(value * PERCENT_SCALE, {
+      suffix: '%',
+      minPlaces: _numberMaybe(params.minPlaces, context),
+      maxPlaces: _numberMaybe(params.maxPlaces, context),
+      separator: _textMaybe(params.thousandSeparator, context),
+    });
+  });
 
-    if (isString(separator)) {
-      const systemSeparator = SEPARATOR_NUMBER.toLocaleString().substring(1, SEPARATOR_OFFSET - 1);
-      let index = to.indexOf(systemSeparator);
-      if (index === -1) {
-        index = to.length;
-      }
-      index -= SEPARATOR_OFFSET;
-      while (index > 0) {
-        to = to.substring(0, index) + separator + to.substring(index);
-        index -= SEPARATOR_OFFSET;
-      }
-    }
-    
-    return prefix + to + suffix;
+  run.setOperation(ops.fromPercent, (params) => (context) => {
+    const percent = _text(params.value, context);
+    const withoutSymbols = percent.replace(/[\$,%]/g, '');
+    const value = parseFloat(withoutSymbols);
+
+    return isFinite(value) ? value / PERCENT_SCALE : null;
   });
 
   // Comparisons
@@ -477,6 +477,64 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
 
 }
 
+
+function getDecimalSeparator() {
+  return SEPARATOR_NUMBER.toLocaleString().substring(1, SEPARATOR_OFFSET - 1);
+}
+
+function getThousandSeparator() {
+  return getDecimalSeparator() === '.' ? ',' : '.';
+}
+
+interface FormatOptions {
+  prefix?: string;
+  suffix?: string; 
+  minPlaces?: number;
+  maxPlaces?: number;
+  useExponent?: boolean;
+  separator?: string;
+}
+
+function format(value: number, { prefix, suffix, minPlaces, maxPlaces, useExponent, separator }: FormatOptions): string {
+  let to = '';
+  const decimalSeparator = getDecimalSeparator();
+
+  if (useExponent) {
+    to = value.toExponential(isUndefined(maxPlaces) ? minPlaces : maxPlaces);
+  } else {
+    to = value.toPrecision();
+
+    const i = to.indexOf(decimalSeparator);
+    if (i !== -1) {
+      const places = to.length - i - 1;
+      if (isNumber(maxPlaces) && places > maxPlaces) {
+        to = value.toFixed(maxPlaces);
+      } else if (isNumber(minPlaces) && places < minPlaces) {
+        to = value.toFixed(minPlaces);
+      }
+    } else if (isNumber(minPlaces)) {
+      to = value.toFixed(minPlaces);
+    }
+  }
+
+  if (isString(separator)) {
+    
+    const normalizedSeparator = separator === ','
+      ? getThousandSeparator()
+      : separator;
+    let index = to.indexOf(decimalSeparator);
+    if (index === -1) {
+      index = to.length;
+    }
+    index -= SEPARATOR_OFFSET;
+    while (index > 0) {
+      to = to.substring(0, index) + normalizedSeparator + to.substring(index);
+      index -= SEPARATOR_OFFSET;
+    }
+  }
+  
+  return (prefix || '') + to + (suffix || '');
+}
 
 function factorial (x: number): number {
   let f = x;
