@@ -1,5 +1,5 @@
 import { Runtime, MapOps, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
-import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe } from './helper';
+import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe, _object } from './helper';
 import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
 
 
@@ -192,6 +192,17 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     }
 
     return plain;
+  });
+
+  run.setOperation(ops.fromPlainObject, (params) => (context) => {
+    const obj = _object(params.object, context);
+    const map = new Map();
+
+    for (const prop in obj) {
+      map.set(prop, obj[prop]);
+    }
+
+    return map;
   });
 
   // Comparisons
