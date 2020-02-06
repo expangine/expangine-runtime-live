@@ -2,6 +2,7 @@ export * from './LiveRuntime';
 
 import { LiveRuntime } from './LiveRuntime';
 import { default as addLiveExpressions } from './Expressions';
+import { default as addLiveAliased } from './Aliased';
 import { default as addLiveAny } from './Any';
 import { default as addLiveBoolean } from './Boolean';
 import { default as addLiveColor } from './Color';
@@ -16,6 +17,7 @@ import { default as addLiveTuple } from './Tuple';
 
 
 addLiveExpressions(LiveRuntime);
+addLiveAliased(LiveRuntime);
 addLiveAny(LiveRuntime);
 addLiveBoolean(LiveRuntime);
 addLiveColor(LiveRuntime);
@@ -32,6 +34,7 @@ addLiveTuple(LiveRuntime);
 export {
   addLiveExpressions,
   addLiveAny,
+  addLiveAliased,
   addLiveBoolean,
   addLiveColor,
   addLiveDate,

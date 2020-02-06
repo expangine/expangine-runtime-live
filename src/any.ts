@@ -50,6 +50,15 @@ export default function(run: Runtime<LiveContext, LiveResult>)
     if (e !== null && e !== undefined) return e;
   });
 
+  run.setOperation(ops.require, (params) => (context) => {
+    const value = params.value(context);
+    if (value === null || value === undefined) {
+      throw new Error('A value being required was not defined.' + params);
+    }
+
+    return value;
+  });
+
   // Comparisons
 
   run.setOperation(ops.isValid, (params) => (context) => 
