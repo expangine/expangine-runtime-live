@@ -1,15 +1,16 @@
 
-import { Runtime, ConstantExpression, GetExpression, OperationExpression, ChainExpression, 
+import { ConstantExpression, GetExpression, OperationExpression, ChainExpression, 
   IfExpression, NotExpression, AndExpression, OrExpression, ForExpression, 
   WhileExpression, DefineExpression, SwitchExpression, SetExpression, 
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
-  ComputedExpression, isUndefined, objectMap, isObject, isArray, isString, copy } from 'expangine-runtime';
+  ComputedExpression, GetTypeExpression, GetRelationExpression, CommentExpression,
+  isUndefined, objectMap, isObject, isArray, isString, copy } from 'expangine-runtime';
 import { preserveScope } from './helper';
-import { LiveCommand, LiveCommandMap, LiveContext, LiveResult } from './LiveRuntime';
+import { LiveCommand, LiveCommandMap, LiveRuntimeImpl } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
 
   function hasSubs(x: any)
@@ -557,5 +558,11 @@ export default function(run: Runtime<LiveContext, LiveResult>)
   });
 
   run.setExpression(NoExpression, () => () => undefined);
+
+  run.setExpression(CommentExpression, () => () => undefined);
+
+  run.setExpression(GetTypeExpression, (expr) => () => expr.name);
+
+  run.setExpression(GetRelationExpression, (expr) => () => expr.name);
 
 }

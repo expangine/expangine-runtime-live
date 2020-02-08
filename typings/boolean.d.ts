@@ -1,3 +1,2 @@
-import { Runtime } from 'expangine-runtime';
-import { LiveContext, LiveResult } from './LiveRuntime';
-export default function (run: Runtime<LiveContext, LiveResult>): void;
+import { LiveRuntimeImpl } from './LiveRuntime';
+export default function (run: LiveRuntimeImpl): void;

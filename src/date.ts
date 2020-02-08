@@ -1,10 +1,10 @@
 
-import { Runtime, DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate, COMPONENT_MAX } from 'expangine-runtime';
+import { DateOps, DateType, currentLocale, compareDates, startOf, mutate, add, getters, setters, endOf, getDaysInMonth, getDaysInYear, getWeeksInYear, diff, adjusters, getDateOffset, isDaylightSavingTime, isLeapYear, Unit, parse, DateFormat, isDate, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _date, _text, _bool, _asList, _asMap, _asObject, _asTuple, _dateMaybe, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = DateOps;
 

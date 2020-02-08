@@ -1,12 +1,12 @@
-import { Runtime, ColorOps, COMPONENT_MAX, Color, clampComponent, ColorType, ColorSpaceHSL, ColorNames, isColor, ColorSpaceRGB } from 'expangine-runtime';
+import { ColorOps, COMPONENT_MAX, Color, clampComponent, ColorType, ColorSpaceHSL, ColorNames, isColor, ColorSpaceRGB } from 'expangine-runtime';
 import { _color, _colorMaybe, _number, saveScope, restoreScope, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
 // tslint:disable: no-magic-numbers
 // tslint:disable: no-bitwise
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = ColorOps;
 

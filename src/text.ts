@@ -3,12 +3,12 @@ import SimpleCrypto from 'simple-crypto-js';
 import { Md5 } from 'ts-md5/dist/md5';
 
 
-import { Runtime, TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
+import { TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = TextOps;
 

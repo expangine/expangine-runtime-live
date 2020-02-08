@@ -1,10 +1,10 @@
 
-import { Runtime, BooleanOps, isBoolean, COMPONENT_MAX } from 'expangine-runtime';
+import { BooleanOps, isBoolean, COMPONENT_MAX } from 'expangine-runtime';
 import { _bool, _asList, _asObject, _asTuple, _asMap, _boolMaybe, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = BooleanOps;
 

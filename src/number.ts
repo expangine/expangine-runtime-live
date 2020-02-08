@@ -1,6 +1,6 @@
-import { Runtime, NumberOps, parse, isNumber, isUndefined, isString, isWhole } from 'expangine-runtime';
+import { NumberOps, parse, isNumber, isUndefined, isString, isWhole } from 'expangine-runtime';
 import { _number, _bool, _text, _numberMaybe, _textMaybe, _asTuple, _asObject, _asMap, _asList, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
 const DEFAULT_BASE = 10;
@@ -8,7 +8,7 @@ const SEPARATOR_NUMBER = 1.5;
 const SEPARATOR_OFFSET = 3;
 const PERCENT_SCALE = 100;
 
-export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number = 0.000001)
+export default function(run: LiveRuntimeImpl, epsilon: number = 0.000001)
 {
   const ops = NumberOps;
 
@@ -420,6 +420,25 @@ export default function(run: Runtime<LiveContext, LiveResult>, epsilon: number =
     Math.abs(_number(params.value, context) % _number(params.by, context)) <= _number(params.epsilon, context, epsilon)
   );
 
+  run.setOperation(ops.bitCompare, (params) => (context) => {
+    const value = _number(params.value, context);
+    const test = _number(params.test, context);
+
+    // tslint:disable: no-bitwise
+    switch (params.method(context)) {
+      case 'contain': return (value & test) === test;
+      case 'notcontain': return (value & test) !== test;
+      case 'overlap': return (value & test) !== 0;
+      case 'none': return (value & test) === 0;
+      case 'equal': return value === test;
+      case 'not': return value !== test;
+      case 'subset': return (value & test) === value;
+    }
+    // tslint:enable: no-bitwise
+
+    return false;
+  });
+  
   // Casts
 
   run.setOperation(ops.asAny, (params) => (context) =>

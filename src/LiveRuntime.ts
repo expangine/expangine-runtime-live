@@ -15,9 +15,14 @@ export type LiveProvider = CommandProvider<LiveContext, LiveResult>;
 export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
 {
 
+  public instances: Record<string, Record<string, any>>;
+  public strict: boolean;
+
   public constructor()
   {
     super(defs);
+    this.instances = Object.create(null);
+    this.strict = true;
   }
 
   public wrapCommandWithReturn(cmd: LiveCommand): LiveCommand

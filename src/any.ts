@@ -1,9 +1,9 @@
-import { Runtime, AnyOps, parse, compare, copy, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
+import { AnyOps, parse, compare, copy, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope, _asSet } from './helper';
-import { LiveContext, LiveResult } from './LiveRuntime';
+import { LiveRuntimeImpl } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = AnyOps;
 
@@ -58,6 +58,10 @@ export default function(run: Runtime<LiveContext, LiveResult>)
 
     return value;
   });
+
+  run.setOperation(ops.ternary, (params) => (context) => 
+    params.condition(context) ? params.truthy(context) : params.falsy(context)
+  );
 
   // Comparisons
 

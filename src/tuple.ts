@@ -1,9 +1,9 @@
-import { Runtime, TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject, isColor, COMPONENT_MAX } from 'expangine-runtime';
+import { TupleOps, compare, copy, isBoolean, isDate, isEmpty, isNumber, isString, isArray, isMap, isObject, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { _list, _number, _listMaybe, _optional, _asSet } from './helper';
-import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
+import { LiveContext, LiveRuntimeImpl, LiveCommand } from './LiveRuntime';
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = TupleOps;
 

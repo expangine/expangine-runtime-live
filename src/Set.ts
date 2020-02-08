@@ -1,13 +1,13 @@
-import { Runtime, SetOps, getCompare, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
+import { SetOps, getCompare, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { saveScope, restoreScope, _set, _optional, _number, _setMaybe } from './helper';
-import { LiveCommand, LiveContext, LiveResult } from './LiveRuntime';
+import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
 // tslint:disable: no-magic-numbers
 // tslint:disable: one-variable-per-declaration
 
 
-export default function(run: Runtime<LiveContext, LiveResult>)
+export default function(run: LiveRuntimeImpl)
 {
   const ops = SetOps;
     
