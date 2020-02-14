@@ -36,7 +36,7 @@ export default function(run: LiveRuntimeImpl)
 
     const value = params.value(context);
 
-    object[key] = value;
+    run.objectSet(object, key, value);
 
     restoreScope(context, saved);
 
@@ -48,7 +48,7 @@ export default function(run: LiveRuntimeImpl)
     const key = params.key(context);
     const value = object[key];
 
-    delete object[key];
+    run.objectRemove(object, key);
 
     return value;
   });

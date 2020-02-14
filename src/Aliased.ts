@@ -10,7 +10,7 @@ export default function(run: LiveRuntimeImpl)
   {
     if (!(name in run.instances)) 
     {
-      run.instances[name] = {};
+      run.objectSet(run.instances, name, {});
     }
 
     return run.instances[name];
@@ -224,7 +224,7 @@ export default function(run: LiveRuntimeImpl)
   {
     for (const prop of props)
     {
-      target[prop] = null;
+      run.objectSet(target, prop, null);
     }
   }
 
@@ -256,7 +256,7 @@ export default function(run: LiveRuntimeImpl)
   {
     for (let i = 0; i < targetProps.length; i++)
     {
-      target[targetProps[i]] = source[sourceProps[i]];
+      run.objectSet(target, targetProps[i], source[sourceProps[i]]);
     }
   }
 
@@ -299,7 +299,7 @@ export default function(run: LiveRuntimeImpl)
     }
 
     const instances = getInstances(name);
-    instances[key] = instance;
+    run.objectSet(instances, key, instance);
     
     return true;
   });
@@ -316,7 +316,7 @@ export default function(run: LiveRuntimeImpl)
     const instances = getInstances(name);
     const exists = !!instances[key];
 
-    delete instances[key];
+    run.objectRemove(instances, key);
     
     return exists;
   });

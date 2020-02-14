@@ -93,6 +93,7 @@ export default function(run: LiveRuntimeImpl)
 
   run.setOperation(ops.clear, (params) => (context) => {
     const map = _map(params.map, context);
+    
     map.clear();
 
     return map;

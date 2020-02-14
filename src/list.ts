@@ -11,6 +11,14 @@ export default function(run: LiveRuntimeImpl)
 {
   const ops = ListOps;
 
+
+  function swap(arr: any[], i: number, k: number)
+  {
+    const temp = arr[i];
+    run.arraySet(arr, i, arr[k]);
+    run.arraySet(arr, k, temp);
+  }
+
   // Static
 
   run.setOperation(ops.create, (params) => (context) => 
@@ -70,7 +78,7 @@ export default function(run: LiveRuntimeImpl)
         const item = params.item(context);
 
         last = item;
-        list.push(item);
+        run.arrayAdd(list, item);
       }
     }
 
@@ -87,7 +95,8 @@ export default function(run: LiveRuntimeImpl)
     const list = _list(params.list, context);
     const index = _number(params.index, context);
     const prev = list[index];
-    list[index] = params.value(context);
+
+    run.arraySet(list, index, params.value(context));
 
     return prev;
   });
@@ -96,7 +105,7 @@ export default function(run: LiveRuntimeImpl)
     const list = _list(params.list, context);
     const item = _optional(params.item, context);
     if (item !== undefined) {
-      list.push(item);
+      run.arrayAdd(list, item);
     }
 
     return list;
@@ -106,7 +115,7 @@ export default function(run: LiveRuntimeImpl)
     const list = _list(params.list, context);
     const item = _optional(params.item, context);
     if (item !== undefined) {
-      list.unshift(item);
+      run.arrayAddFirst(list, item);
     }
 
     return list;
@@ -116,7 +125,7 @@ export default function(run: LiveRuntimeImpl)
     const list = _list(params.list, context);
     const item = _optional(params.item, context);
     if (item !== undefined) {
-      list.push(item);
+      run.arrayAdd(list, item);
     }
 
     return list;
@@ -127,7 +136,7 @@ export default function(run: LiveRuntimeImpl)
     const item = _optional(params.item, context);
     const index = _number(params.index, context, 0);
     if (item !== undefined) {
-      list.splice(index, 0, item);
+      run.arrayInsert(list, index, item);
     }
 
     return list;
@@ -142,17 +151,17 @@ export default function(run: LiveRuntimeImpl)
       params.item(context), 
       n => 0, 
       n => n, 
-      (_, i, list) => (list.splice(i, 1), i), 
+      (_, i, list) => (run.arrayRemoveAt(list, i), i), 
       () => -1
     )
   );
 
   run.setOperation(ops.removeFirst, (params, scope) => (context) => 
-    _list(params.list, context).shift()
+    run.arrayRemoveFirst(_list(params.list, context))
   );
 
   run.setOperation(ops.removeLast, (params, scope) => (context) => 
-    _list(params.list, context).pop()
+    run.arrayRemoveLast(_list(params.list, context))
   );
 
   run.setOperation(ops.removeAt, (params, scope) => (context) => {
@@ -160,8 +169,7 @@ export default function(run: LiveRuntimeImpl)
     const index = _number(params.index, context, -1);
     let item;
     if (index >= 0 && index < list.length) {
-      item = list[index];
-      list.splice(index, 1);
+      item = run.arrayRemoveAt(list, index);
     }
 
     return item;
@@ -178,7 +186,7 @@ export default function(run: LiveRuntimeImpl)
       (item, index, list, removed) => {
         if (params.where(context)) {
           removed.push(item);
-          list.splice(index, 1);
+          run.arrayRemoveAt(list, index);
         }
         
         return removed;
@@ -188,7 +196,8 @@ export default function(run: LiveRuntimeImpl)
 
   run.setOperation(ops.clear, (params, scope) => (context) => {
     const list = _list(params.list, context);
-    list.length = 0;
+
+    run.arrayClear(list);
     
     return list;
   });
@@ -1241,13 +1250,6 @@ function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: 
   return isArray(val) && isType(val[0])
     ? val[0]
     : otherwise(val);
-}
-
-function swap(arr: any[], i: number, k: number)
-{
-  const temp = arr[i];
-  arr[i] = arr[k];
-  arr[k] = temp;
 }
 
 function handleList<R>(list: any[], context: object, scope: Record<string, string>, handle: (list: any[]) => R): R

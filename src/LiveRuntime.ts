@@ -18,6 +18,29 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
   public instances: Record<string, Record<string, any>>;
   public strict: boolean;
 
+  public objectSet: <O extends object, K extends keyof O>(obj: O, prop: K, value: O[K]) => void 
+    = (obj, prop, value) => obj[prop] = value;
+  public objectRemove: <O extends object, K extends keyof O>(obj: O, prop: K) => void
+    = (obj, prop) => delete obj[prop];
+  public arrayAdd: <T>(arr: T[], item: T) => void
+    = (arr, item) => arr.push(item);
+  public arrayAddFirst: <T>(arr: T[], item: T) => void
+    = (arr, item) => arr.unshift(item);
+  public arrayRemoveLast: <T>(arr: T[]) => T
+    = (arr) => arr.pop();
+  public arrayRemoveFirst: <T>(arr: T[]) => T
+    = (arr) => arr.shift();
+  public arrayRemoveAt: <T>(arr: T[], index: number) => T
+    = (arr, index) => arr.splice(index, 1)[0];
+  public arrayInsert: <T>(arr: T[], index: number, item: T) => void
+    = (arr, index, item) => arr.splice(index, 0, item);
+  public arraySet: <T>(arr: T[], index: number, item: T) => T
+    = (arr, index, item) => arr.splice(index, 1, item)[0];
+  public arraySplice: <T>(arr: T[], index: number, remove: number, ...items: T[]) => T[]
+    = (arr, index, remove, items) => arr.splice(index, remove, items);
+  public arrayClear: <T>(arr: T[]) => T[]
+    = (arr) => arr.splice(0, arr.length);
+
   public constructor()
   {
     super(defs);

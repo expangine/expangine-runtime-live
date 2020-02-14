@@ -13,11 +13,6 @@ import { LiveCommand, LiveCommandMap, LiveRuntimeImpl } from './LiveRuntime';
 export default function(run: LiveRuntimeImpl)
 {
 
-  function hasSubs(x: any)
-  {
-    return isObject(x) || isArray(x) || isString(x);
-  }
-
   function traversePath(context: any, value: any, path: LiveCommand[])
   {
     const end = path.length - 1;
@@ -73,9 +68,13 @@ export default function(run: LiveRuntimeImpl)
         {
           previous.set(step, getValue(context));
         }
-        else if (hasSubs(previous))
+        else if (isArray(previous))
         {
-          previous[step] = getValue(context);
+          run.arraySet(previous, step, getValue(context));
+        }
+        else if (isString(previous) || isObject(previous))
+        {
+          run.objectSet(previous, step, getValue(context));
         }
         else
         {
@@ -109,9 +108,13 @@ export default function(run: LiveRuntimeImpl)
           {
             previous.set(step, getValue(context));
           }
-          else if (hasSubs(previous))
+          else if (isArray(previous))
           {
-            previous[step] = getValue(context);
+            run.arraySet(previous, step, getValue(context));
+          }
+          else if (isString(previous) || isObject(previous))
+          {
+            run.objectSet(previous, step, getValue(context));
           }
           else
           {

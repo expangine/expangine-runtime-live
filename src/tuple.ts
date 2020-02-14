@@ -59,7 +59,8 @@ export default function(run: LiveRuntimeImpl)
     const tuple = _list(params.value, context);
     const index = _number(params.index, context, 0);
     const existing = tuple[index];
-    tuple[index] = params.element(context);
+
+    run.arraySet(tuple, index, params.element(context));
     
     return existing;
   });

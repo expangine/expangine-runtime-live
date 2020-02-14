@@ -49,6 +49,7 @@ export default function(run: LiveRuntimeImpl)
 
   run.setOperation(ops.clear, (params) => (context) => {
     const set = _set(params.set, context);
+    
     set.clear();
 
     return set;
