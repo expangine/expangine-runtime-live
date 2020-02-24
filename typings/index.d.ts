@@ -1,6 +1,6 @@
 export * from './LiveRuntime';
 import { default as addLiveExpressions } from './Expressions';
-import { default as addLiveAliased } from './Aliased';
+import { default as addLiveEntity } from './Entity';
 import { default as addLiveAny } from './Any';
 import { default as addLiveBoolean } from './Boolean';
 import { default as addLiveColor } from './Color';
@@ -12,4 +12,4 @@ import { default as addLiveObject } from './Object';
 import { default as addLiveSet } from './Set';
 import { default as addLiveText } from './Text';
 import { default as addLiveTuple } from './Tuple';
-export { addLiveExpressions, addLiveAny, addLiveAliased, addLiveBoolean, addLiveColor, addLiveDate, addLiveList, addLiveMap, addLiveNumber, addLiveObject, addLiveSet, addLiveText, addLiveTuple, };
+export { addLiveExpressions, addLiveAny, addLiveEntity, addLiveBoolean, addLiveColor, addLiveDate, addLiveList, addLiveMap, addLiveNumber, addLiveObject, addLiveSet, addLiveText, addLiveTuple, };

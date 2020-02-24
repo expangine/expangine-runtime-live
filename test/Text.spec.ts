@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ExpressionBuilder, TextOps } from 'expangine-runtime';
+import { Exprs, TextOps } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -10,10 +10,8 @@ describe('text', () => {
 
   it('metaphone', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(TextOps.metaphone, {
-      value: ex.get('input')
+    const code = Exprs.op(TextOps.metaphone, {
+      value: Exprs.get('input')
     });
 
     const program = LiveRuntime.getCommand(code);
@@ -23,9 +21,7 @@ describe('text', () => {
 
   it('toUpper', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.computed('text:toUpper', ex.get('value'));
+    const code = Exprs.computed('text:toUpper', Exprs.get('value'));
 
     const program = LiveRuntime.getCommand(code);
 
@@ -34,9 +30,7 @@ describe('text', () => {
 
   it('asNumber', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(TextOps.asNumber, { value: ex.get('value') });
+    const code = Exprs.op(TextOps.asNumber, { value: Exprs.get('value') });
 
     const program = LiveRuntime.getCommand(code);
 

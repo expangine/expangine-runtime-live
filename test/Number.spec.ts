@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ExpressionBuilder, NumberOps } from 'expangine-runtime';
+import { Exprs, NumberOps } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -10,10 +10,8 @@ describe('text', () => {
 
   it('toPercent', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(NumberOps.toPercent, {
-      value: ex.get('value'),
+    const code = Exprs.op(NumberOps.toPercent, {
+      value: Exprs.get('value'),
     });
 
     const program = LiveRuntime.getCommand(code);
@@ -24,11 +22,9 @@ describe('text', () => {
 
   it('toPercentMinPlaces', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(NumberOps.toPercent, {
-      value: ex.get('value'),
-      minPlaces: ex.const(2),
+    const code = Exprs.op(NumberOps.toPercent, {
+      value: Exprs.get('value'),
+      minPlaces: Exprs.const(2),
     });
 
     const program = LiveRuntime.getCommand(code);
@@ -39,11 +35,9 @@ describe('text', () => {
 
   it('toPercentMaxPlaces', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(NumberOps.toPercent, {
-      value: ex.get('value'),
-      maxPlaces: ex.const(2),
+    const code = Exprs.op(NumberOps.toPercent, {
+      value: Exprs.get('value'),
+      maxPlaces: Exprs.const(2),
     });
 
     const program = LiveRuntime.getCommand(code);
@@ -54,9 +48,7 @@ describe('text', () => {
 
   it('fromPercent', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.op(NumberOps.fromPercent, { value: ex.get('value') });
+    const code = Exprs.op(NumberOps.fromPercent, { value: Exprs.get('value') });
 
     const program = LiveRuntime.getCommand(code);
 

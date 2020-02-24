@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ListOps, NumberType, ObjectType, TextType, OptionalType, BooleanType, DateType, MapType, OperationExpression, ConstantExpression, ExpressionBuilder, NumberOps } from 'expangine-runtime';
+import { ListOps, NumberType, TextType, OptionalType, BooleanType, DateType, MapType, OperationExpression, ConstantExpression, Exprs, NumberOps, Types } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -155,17 +155,18 @@ describe('index', () => {
 
   it('functions', () =>
   {
-    LiveRuntime.defs.addFunction(
-      'timesTwo', 
-      NumberType, 
-      { x: NumberType }, 
-      ['return', 
+    LiveRuntime.defs.addFunction({
+      name: 'timesTwo',
+      params: Types.object({
+        x: NumberType,
+      }),
+      expression: ['return', 
         ['op', 'num:*', {
           value: ['get', ['x']],
           multiplier: 2
         }]
       ]
-    );
+    });
 
     const process = LiveRuntime.eval(['invoke', 'timesTwo', {
       x: 3
@@ -182,18 +183,17 @@ describe('index', () => {
 
   it('functions early exit', () =>
   {
-    LiveRuntime.defs.addFunction(
-      'isEven', 
-      NumberType, 
-      { x: NumberType }, 
-      ['chain', [
+    LiveRuntime.defs.addFunction({
+      name: 'isEven', 
+      params: Types.object({ x: NumberType }), 
+      expression: ['chain', [
         ['if', [
           [['op', 'num:%?', { value: ['get', ['x']], by: 2 }], 
             ['return', true]]
         ]],
         ['return', false]
-      ]]
-    );
+      ]],
+    });
 
     const process = LiveRuntime.eval(['invoke', 'isEven', {
       x: ['get', ['x']]
@@ -208,22 +208,19 @@ describe('index', () => {
 
   it('functions early exit with builder', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    LiveRuntime.defs.addFunction(
-      'isEven', 
-      NumberType, 
-      { x: NumberType }, 
-      ex.body(
-      ex.if(ex.op(NumberOps.isDivisible, {
-          value: ex.get('x'),
-          by: 2 }))
-        .than(
-          ex.return(true
-        )),
-      ex.return(false),
-      )
-    );
+    LiveRuntime.defs.addFunction({
+      name: 'isEven', 
+      params: Types.object({ x: NumberType }), 
+      expression: Exprs.body(
+        Exprs.if(Exprs.op(NumberOps.isDivisible, {
+            value: Exprs.get('x'),
+            by: 2 }))
+          .than(
+            Exprs.return(true
+          )),
+        Exprs.return(false),
+      ),
+    });
 
     const process = LiveRuntime.eval(['invoke', 'isEven', {
       x: ['get', ['x']]
@@ -238,7 +235,7 @@ describe('index', () => {
 
   it('tofromJson', () => 
   {
-    const type = ObjectType.from({
+    const type = Types.object({
       a: TextType.baseType,
       b: NumberType.baseType,
       c: new OptionalType(BooleanType.baseType),
@@ -294,13 +291,11 @@ describe('index', () => {
 
   it('switch', () => 
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex
-      .switch(ex.get('value'), NumberOps.isEqual)
+    const code = Exprs
+      .switch(Exprs.get('value'), NumberOps.isEqual)
         .case(1)
         .case(2)
-        .case(ex.get('other'))
+        .case(Exprs.get('other'))
           .than('a')
         .case(3)
           .than('b')
@@ -320,11 +315,9 @@ describe('index', () => {
 
   it('sub', () => 
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.sub(
-      ex.object({
-        x: ex.const({y: 4})
+    const code = Exprs.sub(
+      Exprs.object({
+        x: Exprs.const({y: 4})
       }), 
       'x', 
       'y'

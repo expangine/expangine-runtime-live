@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ExpressionBuilder } from 'expangine-runtime';
+import { Exprs } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -10,9 +10,7 @@ describe('set', () => {
 
   it('set simple', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x').to(4);
+    const code = Exprs.set('x').to(4);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -23,9 +21,7 @@ describe('set', () => {
 
   it('set undefined', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('y').to(5);
+    const code = Exprs.set('y').to(5);
     const program = LiveRuntime.getCommand(code);
     const context: any = { x: 3 };
 
@@ -36,9 +32,7 @@ describe('set', () => {
 
   it('set sub null', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x', 'y').to(null);
+    const code = Exprs.set('x', 'y').to(null);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 4 };
 
@@ -49,9 +43,7 @@ describe('set', () => {
 
   it('set map', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x', 'w').to(44);
+    const code = Exprs.set('x', 'w').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 
@@ -62,9 +54,7 @@ describe('set', () => {
 
   it('set map undefined', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x', 'w').to(44);
+    const code = Exprs.set('x', 'w').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['y', 4]]) };
 
@@ -75,9 +65,7 @@ describe('set', () => {
 
   it('set map sub', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x', 'w', 'z').to(44);
+    const code = Exprs.set('x', 'w', 'z').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 

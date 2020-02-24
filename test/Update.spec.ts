@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ExpressionBuilder, NumberOps } from 'expangine-runtime';
+import { Exprs, NumberOps } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -10,9 +10,7 @@ describe('update', () => {
 
   it('update simple', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('x').to(4);
+    const code = Exprs.update('x').to(4);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -23,10 +21,8 @@ describe('update', () => {
 
   it('update simple scoped', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('x').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.update('x').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);
@@ -39,10 +35,8 @@ describe('update', () => {
 
   it('update undefined', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('y').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.update('y').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);
@@ -55,10 +49,8 @@ describe('update', () => {
 
   it('update sub null', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('x', 'y').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.update('x', 'y').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);
@@ -71,10 +63,8 @@ describe('update', () => {
 
   it('update map', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('x', 'w').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.update('x', 'w').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);
@@ -87,10 +77,8 @@ describe('update', () => {
 
   it('update map undefined', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.set('x', 'w').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.set('x', 'w').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);
@@ -103,10 +91,8 @@ describe('update', () => {
 
   it('update map sub', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.update('x', 'w', 'z').to(ex.op(NumberOps.mul, {
-      value: ex.get('current'),
+    const code = Exprs.update('x', 'w', 'z').to(Exprs.op(NumberOps.mul, {
+      value: Exprs.get('current'),
       multiplier: 2
     }));
     const program = LiveRuntime.getCommand(code);

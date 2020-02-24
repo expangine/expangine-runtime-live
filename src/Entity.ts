@@ -1,10 +1,10 @@
-import { AliasedOps, TypeRelation, RelationTypeKey, compare, isArray, ListType, RelationCascade } from 'expangine-runtime';
+import { EntityOps, EntityRelation, RelationTypeKey, compare, isArray, ListType, RelationCascade } from 'expangine-runtime';
 import { LiveRuntimeImpl, LiveCommandMap, LiveContext } from './LiveRuntime';
 
 
 export default function(run: LiveRuntimeImpl)
 {
-  const ops = AliasedOps;
+  const ops = EntityOps;
 
   function getInstances<R>(name: string): Record<string, any>
   {
@@ -38,19 +38,19 @@ export default function(run: LiveRuntimeImpl)
       return;
     }
 
-    const storage = run.defs.storage[name];
+    const entity = run.defs.entities[name];
 
-    if (!storage) 
+    if (!entity) 
     {
       if (run.strict) 
       {
-        throw new Error(`A key for ${name} could not be determined, no storage exists.`);
+        throw new Error(`A key for ${name} could not be determined, no entity exists.`);
       }
 
       return;
     }
 
-    return storage.getKey(run, instance);
+    return entity.getKey(run, instance);
   }
 
   function getKeyAndRelation(name: string, instance: any, relationName: string)
@@ -94,7 +94,7 @@ export default function(run: LiveRuntimeImpl)
     return true;
   }
 
-  function getRelationTypeKey(instance: any, relation: TypeRelation)
+  function getRelationTypeKey(instance: any, relation: EntityRelation)
   {
     let relatedType: RelationTypeKey = null;
 
@@ -123,7 +123,7 @@ export default function(run: LiveRuntimeImpl)
     return relatedType;
   }
 
-  function getRelated(instance: any, relation: TypeRelation, relatedType: RelationTypeKey)
+  function getRelated(instance: any, relation: EntityRelation, relatedType: RelationTypeKey)
   {
     const relatedInstances = getInstances(relatedType.name);
     const relatedList: any[] = [];
@@ -155,13 +155,13 @@ export default function(run: LiveRuntimeImpl)
 
   function getRelatedMap(relatedName: string, relatedList: any[])
   {
-    const storage = run.defs.storage[relatedName];
+    const entity = run.defs.entities[relatedName];
 
-    if (!storage)
+    if (!entity)
     {
       if (run.strict)
       {
-        throw new Error(`No storage exists for ${relatedName}`);
+        throw new Error(`No entity exists for ${relatedName}`);
       }
 
       return;
@@ -171,7 +171,7 @@ export default function(run: LiveRuntimeImpl)
 
     for (const related of relatedList)
     {
-      const key = storage.getKey(run, related);
+      const key = entity.getKey(run, related);
 
       if (!key)
       {
@@ -228,7 +228,7 @@ export default function(run: LiveRuntimeImpl)
     }
   }
 
-  function clearReference(instance: any, relation: TypeRelation, related: any, relatedType: RelationTypeKey)
+  function clearReference(instance: any, relation: EntityRelation, related: any, relatedType: RelationTypeKey)
   {
     if (relation.relation.required)
     {
@@ -260,7 +260,7 @@ export default function(run: LiveRuntimeImpl)
     }
   }
 
-  function setReference(instance: any, relation: TypeRelation, related: any, relatedType: RelationTypeKey)
+  function setReference(instance: any, relation: EntityRelation, related: any, relatedType: RelationTypeKey)
   {
     // TODO if owns & has value, removed owned
 
@@ -276,13 +276,13 @@ export default function(run: LiveRuntimeImpl)
 
   run.setOperation(ops.newInstance, (params) => (context) => {
     const name = params.name(context);
-    const aliased = run.defs.aliased[name];
+    const entity = run.defs.entities[name];
 
-    if (!aliased) {
-      throw new Error(`The aliased type ${name} is not defined.`);
+    if (!entity) {
+      throw new Error(`The entity type ${name} is not defined.`);
     }
 
-    return aliased.create();
+    return entity.type.create();
   });
 
   run.setOperation(ops.getKey, (params) => (context) =>

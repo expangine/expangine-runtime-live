@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { ExpressionBuilder } from 'expangine-runtime';
+import { Exprs } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -10,9 +10,7 @@ describe('get', () => {
 
   it('get simple', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.get('x');
+    const code = Exprs.get('x');
     const program = LiveRuntime.getCommand(code);
 
     expect(program({x: 3})).toEqual(3);
@@ -20,9 +18,7 @@ describe('get', () => {
 
   it('get undefined', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.get('y');
+    const code = Exprs.get('y');
     const program = LiveRuntime.getCommand(code);
 
     expect(program({x: 3})).toEqual(undefined);
@@ -30,9 +26,7 @@ describe('get', () => {
 
   it('get null', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.get('x');
+    const code = Exprs.get('x');
     const program = LiveRuntime.getCommand(code);
 
     expect(program({x: null})).toEqual(null);
@@ -40,9 +34,7 @@ describe('get', () => {
 
   it('get sub null', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.get('x', 'w');
+    const code = Exprs.get('x', 'w');
     const program = LiveRuntime.getCommand(code);
 
     expect(program({x: null})).toEqual(undefined);
@@ -50,9 +42,7 @@ describe('get', () => {
 
   it('get map', () =>
   {
-    const ex = new ExpressionBuilder();
-
-    const code = ex.get('x', 'w');
+    const code = Exprs.get('x', 'w');
     const program = LiveRuntime.getCommand(code);
 
     expect(program({x: new Map([['w', 4]])})).toEqual(4);

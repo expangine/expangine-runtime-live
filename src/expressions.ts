@@ -524,7 +524,7 @@ export default function(run: LiveRuntimeImpl)
   run.setExpression(InvokeExpression, (expr, provider) =>
   {
     const func = provider.getFunction(expr.name);
-    const command = provider.getCommand(func.options.expression);
+    const command = provider.getCommand(func.expression);
     const args = objectMap(expr.args, a => provider.getCommand(a));
 
     return (context) => 
@@ -532,10 +532,11 @@ export default function(run: LiveRuntimeImpl)
       if (provider.returnProperty in context) return;
 
       const params = objectMap(args, a => a(context));
+      const funcContext = func.getArguments(params, false);
 
-      command(params);
+      command(funcContext);
 
-      return params[provider.returnProperty];
+      return funcContext[provider.returnProperty];
     };
   });
 
