@@ -262,10 +262,22 @@ export default function(run: LiveRuntimeImpl)
     getKey(getEntity(params.name(context)), params.instance(context))
   );
 
-  run.setOperation(ops.get, (params) => (context) => {
+  run.setOperation(ops.get, (params, scope) => (context) => {
     const entity = getEntity(params.name(context));
 
-    return entity ? entity.instances : null;
+    if (!entity) {
+      return null;
+    }
+
+    if (!params.where) {
+      return entity.instances;
+    }
+
+    return entity.instances.filter((instance) => {
+      context[scope.instance] = instance;
+
+      return params.where(context);
+    });
   });
 
   run.setOperation(ops.save, (params) => (context) => {
