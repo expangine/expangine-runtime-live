@@ -1,4 +1,4 @@
-import { EntityOps, EntityRelation, RelationTypeKey, compare, isArray, ListType, RelationCascade } from 'expangine-runtime';
+import { EntityOps, EntityRelation, RelationTypeKey, compare, isArray, ListType, RelationCascade, Entity, isObject, isEmpty } from 'expangine-runtime';
 import { LiveRuntimeImpl, LiveCommandMap, LiveContext } from './LiveRuntime';
 
 
@@ -6,70 +6,67 @@ export default function(run: LiveRuntimeImpl)
 {
   const ops = EntityOps;
 
-  function getInstances<R>(name: string): Record<string, any>
-  {
-    if (!(name in run.instances)) 
-    {
-      run.objectSet(run.instances, name, {});
-    }
-
-    return run.instances[name];
-  }
-
-  function getKey(name: string, instance: any) 
+  function getEntity(name: string): Entity | undefined
   {
     if (!name) 
     {
       if (run.strict) 
       {
-        throw new Error('A key could not be determined without a type name.');
+        throw new Error('An entity could not be determined without a name.');
       }
 
       return;
     }
 
-    if (!instance) 
+    const entity = run.defs.getEntity(name);
+
+    if (!entity)
     {
-      if (run.strict) 
+      if (run.strict)
       {
-        throw new Error(`A key for ${name} could not be determined for a null instance.`);
+        throw new Error(`An entity with the name ${name} does not exist.`);
       }
 
       return;
     }
 
-    const entity = run.defs.entities[name];
-
-    if (!entity) 
-    {
-      if (run.strict) 
-      {
-        throw new Error(`A key for ${name} could not be determined, no entity exists.`);
-      }
-
-      return;
-    }
-
-    return entity.getKey(run, instance);
+    return entity;
   }
 
-  function getKeyAndRelation(name: string, instance: any, relationName: string)
+  function getKey(entity: Entity | null, instance: any) 
   {
-    const key = getKey(name, instance);
+    if (!isObject(instance))
+    {
+      if (run.strict)
+      {
+        throw new Error(`Cannot get a key for a non-object entity instance.`);
+      }
+
+      return;
+    }
+
+    return entity
+      ? entity.getKey(run, instance)
+      : undefined;
+  }
+
+  function getKeyAndRelation(entity: Entity, instance: any, relationName: string)
+  {
+    const key = getKey(entity, instance);
 
     if (key === undefined) 
     {
       return {};
     }
 
-    const relations = run.defs.getRelations(name);
+    const relations = run.defs.getRelations(entity.name);
     const relation = relations.find((r) => r.name === relationName);
 
     if (!relation) 
     {
       if (run.strict) 
       {
-        throw new Error(`The relation ${relationName} on ${name} does not exist.`);
+        throw new Error(`The relation ${relationName} on ${entity.name} does not exist.`);
       }
 
       return {};
@@ -82,10 +79,10 @@ export default function(run: LiveRuntimeImpl)
   {
     for (let i = 0; i < aprops.length; i++)
     {
-      const ap = aprops[i];
-      const bp = bprops[i];
+      const ap = a[aprops[i]];
+      const bp = b[bprops[i]];
 
-      if (compare(a[ap], b[bp]) !== 0)
+      if ((isEmpty(ap) && isEmpty(bp)) || compare(ap, bp) !== 0) 
       {
         return false;
       }
@@ -123,48 +120,28 @@ export default function(run: LiveRuntimeImpl)
     return relatedType;
   }
 
-  function getRelated(instance: any, relation: EntityRelation, relatedType: RelationTypeKey)
+  function getRelated(instance: any, relation: EntityRelation, relatedType: RelationTypeKey, relatedEntity: Entity | null)
   {
-    const relatedInstances = getInstances(relatedType.name);
-    const relatedList: any[] = [];
-
-    for (const key in relatedInstances)
+    if (!relatedEntity)
     {
-      const related = relatedInstances[key];
-
-      if (match(instance, relation.local, related, relatedType.props))
-      {
-        if (relation.where)
-        {
-          const [whereProperty, whereValue] = relation.where;
-
-          if (compare(related[whereProperty], whereValue) === 0)
-          {
-            relatedList.push(related);
-          }
-        }
-        else
-        {
-          relatedList.push(related);
-        }
-      }
+      return;
     }
 
-    return relatedList;
+    return relatedEntity.instances.filter((related) =>
+    {
+      return match(instance, relation.local, related, relatedType.props)
+        ? relation.where
+          ? compare(related[relation.where[0]], relation.where[1]) === 0
+          : true
+        : false;
+    });
   }
 
-  function getRelatedMap(relatedName: string, relatedList: any[])
+  function getRelatedMap(entity: Entity | null, relatedList: any[])
   {
-    const entity = run.defs.entities[relatedName];
-
     if (!entity)
     {
-      if (run.strict)
-      {
-        throw new Error(`No entity exists for ${relatedName}`);
-      }
-
-      return;
+      return {};
     }
 
     const map: Record<string, any> = Object.create(null);
@@ -177,7 +154,7 @@ export default function(run: LiveRuntimeImpl)
       {
         if (run.strict)
         {
-          throw new Error(`Related ${relatedName} could not calculate a key.`);
+          throw new Error(`Related ${entity.key} could not calculate a key.`);
         }
 
         continue;
@@ -191,10 +168,10 @@ export default function(run: LiveRuntimeImpl)
 
   function fetchExisting(params: LiveCommandMap, context: LiveContext)
   {
-    const name = params.name(context);
+    const entity = getEntity(params.name(context));
     const instance = params.instance(context);
     const relationName = params.relation(context);
-    const { relation } = getKeyAndRelation(name, instance, relationName);
+    const { relation } = getKeyAndRelation(entity, instance, relationName);
 
     if (relation === undefined) 
     {
@@ -208,16 +185,17 @@ export default function(run: LiveRuntimeImpl)
       return {};
     }
 
-    const existing = getRelated(instance, relation, relatedType);
+    const relatedEntity = getEntity(relatedType.name);
+    const existing = getRelated(instance, relation, relatedType, relatedEntity);
 
     if (!existing)
     {
       return {};
     }
 
-    const existingMap = getRelatedMap(relatedType.name, existing);
+    const existingMap = getRelatedMap(relatedEntity, existing);
 
-    return { name, instance, relationName, relation, relatedType, existing, existingMap };
+    return { name, instance, relationName, relation, relatedType, relatedEntity, existing, existingMap };
   }
 
   function clearProps(target: any, props: string[])
@@ -270,59 +248,74 @@ export default function(run: LiveRuntimeImpl)
     }
     else
     {
-      setProps(related, relatedType.props, instance, relation.local);
+      setProps(instance, relation.local, related, relatedType.props);
     }
   }
 
   run.setOperation(ops.newInstance, (params) => (context) => {
-    const name = params.name(context);
-    const entity = run.defs.entities[name];
-
-    if (!entity) {
-      throw new Error(`The entity type ${name} is not defined.`);
-    }
-
-    return entity.type.create();
+    const entity = getEntity(params.name(context));
+    
+    return entity ? entity.type.create() : entity;
   });
 
   run.setOperation(ops.getKey, (params) => (context) =>
-    getKey(params.name(context), params.instance(context))
+    getKey(getEntity(params.name(context)), params.instance(context))
   );
 
+  run.setOperation(ops.get, (params) => (context) => {
+    const entity = getEntity(params.name(context));
+
+    return entity ? entity.instances : null;
+  });
+
   run.setOperation(ops.save, (params) => (context) => {
-    const name = params.name(context);
+    const entity = getEntity(params.name(context));
     const instance = params.instance(context);
-    const key = getKey(name, instance);
+
+    if (!entity || !instance) {
+      return false;
+    }
+
+    entity.setKey(instance);
+
+    const key = getKey(entity, instance);
 
     if (key === undefined) {
       return false;
     }
 
-    const instances = getInstances(name);
-    run.objectSet(instances, key, instance);
+    const index = entity.instances.findIndex((other) => getKey(entity, other) === key);
+
+    if (index === -1) {
+      run.arrayAdd(entity.instances, instance);
+    } else {
+      run.arraySet(entity.instances, index, instance);
+    }
     
     return true;
   });
 
   run.setOperation(ops.remove, (params) => (context) => {
-    const name = params.name(context);
+    const entity = getEntity(params.name(context));
     const instance = params.instance(context);
-    const key = getKey(name, instance);
+    const key = getKey(entity, instance);
 
     if (key === undefined) {
       return false;
     }
 
-    const instances = getInstances(name);
-    const exists = !!instances[key];
+    const index = entity.instances.findIndex((other) => getKey(entity, other) === key);
+    const exists = index !== -1;
 
-    run.objectRemove(instances, key);
+    if (exists) { 
+      run.arrayRemoveAt(entity.instances, index);
+    }
     
     return exists;
   });
 
   run.setOperation(ops.setRelated, (params) => (context) => {
-    const { relatedType, instance, relation, existingMap } = fetchExisting(params, context);
+    const { relatedType, relatedEntity, instance, relation, existingMap } = fetchExisting(params, context);
 
     if (!existingMap)
     {
@@ -331,7 +324,7 @@ export default function(run: LiveRuntimeImpl)
 
     const related = params.related(context); 
     const relatedArray = isArray(related) ? related : [related];
-    const relatedMap = getRelatedMap(relatedType.name, relatedArray);
+    const relatedMap = getRelatedMap(relatedEntity, relatedArray);
     let changes = 0;
 
     for (const existingId in existingMap)
@@ -360,7 +353,7 @@ export default function(run: LiveRuntimeImpl)
   });
 
   run.setOperation(ops.addRelated, (params) => (context) => {
-    const { relationName, relation, relatedType, instance, existingMap } = fetchExisting(params, context);
+    const { relation, relatedType, relatedEntity, instance, existingMap } = fetchExisting(params, context);
 
     if (!existingMap)
     {
@@ -369,7 +362,7 @@ export default function(run: LiveRuntimeImpl)
 
     const related = params.related(context); 
     const relatedArray = isArray(related) ? related : [related];
-    const relatedMap = getRelatedMap(relationName, relatedArray)
+    const relatedMap = getRelatedMap(relatedEntity, relatedArray)
     let changes = 0;
     
     for (const relatedId in relatedMap)
@@ -385,7 +378,7 @@ export default function(run: LiveRuntimeImpl)
   });
 
   run.setOperation(ops.removeRelated, (params) => (context) => {
-    const { relationName, relation, relatedType, instance, existingMap } = fetchExisting(params, context);
+    const { relatedEntity, relation, relatedType, instance, existingMap } = fetchExisting(params, context);
 
     if (!existingMap)
     {
@@ -394,7 +387,7 @@ export default function(run: LiveRuntimeImpl)
 
     const related = params.related(context); 
     const relatedArray = isArray(related) ? related : [related];
-    const relatedMap = getRelatedMap(relationName, relatedArray)
+    const relatedMap = getRelatedMap(relatedEntity, relatedArray)
     let changes = 0;
     
     for (const relatedId in relatedMap)
@@ -437,7 +430,7 @@ export default function(run: LiveRuntimeImpl)
   });
 
   run.setOperation(ops.isRelated, (params) => (context) => {
-    const { relationName, existingMap } = fetchExisting(params, context);
+    const { relatedEntity, existingMap } = fetchExisting(params, context);
 
     if (!existingMap)
     {
@@ -446,7 +439,7 @@ export default function(run: LiveRuntimeImpl)
 
     const related = params.related(context); 
     const relatedArray = isArray(related) ? related : [related];
-    const relatedMap = getRelatedMap(relationName, relatedArray)
+    const relatedMap = getRelatedMap(relatedEntity, relatedArray)
     let relatedCount = 0;
     
     for (const relatedId in relatedMap)

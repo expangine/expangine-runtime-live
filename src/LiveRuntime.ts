@@ -15,7 +15,6 @@ export type LiveProvider = CommandProvider<LiveContext, LiveResult>;
 export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
 {
 
-  public instances: Record<string, Record<string, any>>;
   public strict: boolean;
 
   public objectSet: <O extends object, K extends keyof O>(obj: O, prop: K, value: O[K]) => void 
@@ -44,7 +43,6 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
   public constructor()
   {
     super(defs);
-    this.instances = Object.create(null);
     this.strict = true;
   }
 
