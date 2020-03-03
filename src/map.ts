@@ -1,4 +1,4 @@
-import { MapOps, getCompare, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
+import { MapOps, DataTypes, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
 import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe, _object } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
@@ -132,7 +132,7 @@ export default function(run: LiveRuntimeImpl)
         }
       }
 
-      return getCompare(less, more);
+      return DataTypes.getCompare(less, more);
     });
   }));
 

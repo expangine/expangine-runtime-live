@@ -5,7 +5,7 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
-  GetDataExpression, isUndefined, objectMap, isObject, isArray, isString, copy } from 'expangine-runtime';
+  GetDataExpression, isUndefined, objectMap, isObject, isArray, isString, DataTypes } from 'expangine-runtime';
 import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl } from './LiveRuntime';
 
@@ -43,7 +43,7 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(ConstantExpression, (expr, provider) => 
   {
-    return () => copy(expr.value)
+    return () => DataTypes.copy(expr.value)
   });
 
   run.setExpression(GetExpression, (expr, provider) => 

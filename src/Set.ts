@@ -1,4 +1,4 @@
-import { SetOps, getCompare, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
+import { SetOps, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX, DataTypes } from 'expangine-runtime';
 import { saveScope, restoreScope, _set, _optional, _number, _setMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
@@ -59,28 +59,9 @@ export default function(run: LiveRuntimeImpl)
     _set(params.set, context).size
   );
 
-  run.setOperation(ops.cmp, (params, scope) => (context => {
-    const set = _set(params.value, context);
-    const test = _set(params.test, context);
-
-    return handleSet(set, context, scope, () => {
-      let less = 0, more = 0;
-
-      for (const value of set.values()) {
-        if (!test.has(value)) {
-          more++;
-        }
-      }
-
-      for (const value of test.values()) {
-        if (!set.has(value)) {
-          less++;
-        }
-      }
-
-      return getCompare(less, more);
-    });
-  }));
+  run.setOperation(ops.cmp, (params, scope) => (context) => 
+    DataTypes.compare(_set(params.value, context), _set(params.test, context))
+  );
 
   run.setOperation(ops.copy, (params, scope) => (context) => {
     const set = _set(params.set, context);
@@ -126,24 +107,9 @@ export default function(run: LiveRuntimeImpl)
     isSet(params.value(context))
   );
 
-  run.setOperation(ops.isEqual, (params, scope) => (context) => {
-    const set = _set(params.value, context);
-    const test = _set(params.test, context);
-
-    if (set.size !== test.size) {
-      return false;
-    }
-
-    return handleSet(set, context, scope, () => {
-      for (const value of set) {
-        if (!test.has(value)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  });
+  run.setOperation(ops.isEqual, (params, scope) => (context) => 
+    DataTypes.equals(_set(params.value, context), _set(params.test, context))
+  );
 
   run.setOperation(ops.isNotEqual, (params, scope) => (context) =>
     !run.getOperation(ops.isEqual.id)(params, scope)(context)

@@ -1,4 +1,4 @@
-import { EntityOps, EntityRelation, RelationTypeKey, compare, isArray, ListType, RelationCascade, Entity, isObject, isEmpty } from 'expangine-runtime';
+import { EntityOps, EntityRelation, RelationTypeKey, DataTypes, isArray, ListType, RelationCascade, Entity, isObject, isEmpty } from 'expangine-runtime';
 import { LiveRuntimeImpl, LiveCommandMap, LiveContext } from './LiveRuntime';
 
 
@@ -82,7 +82,7 @@ export default function(run: LiveRuntimeImpl)
       const ap = a[aprops[i]];
       const bp = b[bprops[i]];
 
-      if ((isEmpty(ap) && isEmpty(bp)) || compare(ap, bp) !== 0) 
+      if ((isEmpty(ap) && isEmpty(bp)) || !DataTypes.equals(ap, bp)) 
       {
         return false;
       }
@@ -131,7 +131,7 @@ export default function(run: LiveRuntimeImpl)
     {
       return match(instance, relation.local, related, relatedType.props)
         ? relation.where
-          ? compare(related[relation.where[0]], relation.where[1]) === 0
+          ? DataTypes.equals(related[relation.where[0]], relation.where[1])
           : true
         : false;
     });

@@ -1,4 +1,4 @@
-import { ListOps, getCompare, isBoolean, isEmpty, isDate, isNumber, isString, isArray, COMPONENT_MAX, isColor } from 'expangine-runtime';
+import { ListOps, DataTypes, isBoolean, isEmpty, isDate, isNumber, isString, isArray, COMPONENT_MAX, isColor } from 'expangine-runtime';
 import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe, preserveScope } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
@@ -660,7 +660,7 @@ export default function(run: LiveRuntimeImpl)
       }
     });
 
-    return getCompare(less, more);
+    return DataTypes.getCompare(less, more);
   });
 
   run.setOperation(ops.group, (params, scope) => (context) => {

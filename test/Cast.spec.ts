@@ -1,5 +1,5 @@
 
-import { TupleType, ObjectType, TextType, BooleanType, DateType, ListType, MapType, NumberType, ConstantExpression, copiers } from 'expangine-runtime';
+import { TupleType, ObjectType, TextType, BooleanType, DateType, ListType, MapType, NumberType, ConstantExpression, DataTypes } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 // tslint:disable: no-magic-numbers
@@ -15,9 +15,9 @@ describe('cast', () => {
     global.Date.parse = _Date.parse;
     global.Date.now = _Date.now;
 
-    copiers.unshift({
+    DataTypes.addCopier({
       priority: 20,
-      tryCopy: (x, copyAny, copied) => {
+      copy: (x) => {
         if (x === d) {
           return d;
         }
@@ -103,7 +103,6 @@ describe('cast', () => {
     }
 
     global.Date = _Date;
-    copiers.shift();
   });
 
-});
+}); 

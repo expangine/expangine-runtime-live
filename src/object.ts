@@ -1,4 +1,4 @@
-import { ObjectOps, compare, copy, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
+import { ObjectOps, DataTypes, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
 import { _object, restoreScope, saveScope, _objectMaybe, _optional, _asSet } from './helper';
 import { LiveContext, LiveRuntimeImpl, LiveCommand } from './LiveRuntime';
 
@@ -54,11 +54,11 @@ export default function(run: LiveRuntimeImpl)
   });
 
   run.setOperation(ops.cmp, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context))
+    DataTypes.compare(_object(params.value, context), _object(params.test, context))
   );
 
   run.setOperation(ops.copy, (params) => (context) =>
-    copy(_object(params.object, context))
+    DataTypes.copy(_object(params.object, context))
   );
 
   function mergeValues(target: any, merge: any) 
@@ -95,27 +95,27 @@ export default function(run: LiveRuntimeImpl)
   );
 
   run.setOperation(ops.isEqual, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) === 0
+    DataTypes.equals(_object(params.value, context), _object(params.test, context))
   );
 
   run.setOperation(ops.isNotEqual, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) !== 0
+    !DataTypes.equals(_object(params.value, context), _object(params.test, context))
   );
 
   run.setOperation(ops.isLess, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) < 0
+    DataTypes.compare(_object(params.value, context), _object(params.test, context)) < 0
   );
 
   run.setOperation(ops.isLessOrEqual, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) <= 0
+    DataTypes.compare(_object(params.value, context), _object(params.test, context)) <= 0
   );
 
   run.setOperation(ops.isGreater, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) > 0
+    DataTypes.compare(_object(params.value, context), _object(params.test, context)) > 0
   );
 
   run.setOperation(ops.isGreaterOrEqual, (params) => (context) => 
-    compare(_object(params.value, context), _object(params.test, context)) >= 0
+    DataTypes.compare(_object(params.value, context), _object(params.test, context)) >= 0
   );
 
   // Casts

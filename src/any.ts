@@ -1,4 +1,4 @@
-import { AnyOps, parse, compare, copy, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
+import { AnyOps, parse, DataTypes, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
 import { _asList, _asTuple, _asMap, _asObject, restoreScope, saveScope, _asSet } from './helper';
 import { LiveRuntimeImpl } from './LiveRuntime';
 
@@ -10,11 +10,11 @@ export default function(run: LiveRuntimeImpl)
   // Operations
 
   run.setOperation(ops.cmp, (params) => (context) => 
-    compare(params.value(context), params.test(context))
+    DataTypes.compare(params.value(context), params.test(context))
   );
 
   run.setOperation(ops.copy, (params) => (context) =>
-    copy(params.value(context))
+    DataTypes.copy(params.value(context))
   );
 
   run.setOperation(ops.isDefined, (params) => (context) => {
@@ -70,27 +70,27 @@ export default function(run: LiveRuntimeImpl)
   );
 
   run.setOperation(ops.isEqual, (params) => (context) => 
-    compare(params.value(context), params.test(context)) === 0
+    DataTypes.equals(params.value(context), params.test(context))
   );
 
   run.setOperation(ops.isNotEqual, (params) => (context) => 
-    compare(params.value(context), params.test(context)) !== 0
+    !DataTypes.equals(params.value(context), params.test(context))
   );
 
   run.setOperation(ops.isLess, (params) => (context) => 
-    compare(params.value(context), params.test(context)) < 0
+    DataTypes.compare(params.value(context), params.test(context)) < 0
   );
 
   run.setOperation(ops.isLessOrEqual, (params) => (context) => 
-    compare(params.value(context), params.test(context)) <= 0
+    DataTypes.compare(params.value(context), params.test(context)) <= 0
   );
 
   run.setOperation(ops.isGreater, (params) => (context) => 
-    compare(params.value(context), params.test(context)) > 0
+    DataTypes.compare(params.value(context), params.test(context)) > 0
   );
 
   run.setOperation(ops.isGreaterOrEqual, (params) => (context) => 
-    compare(params.value(context), params.test(context)) >= 0
+    DataTypes.compare(params.value(context), params.test(context)) >= 0
   );
 
   // Casts
