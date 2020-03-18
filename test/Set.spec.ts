@@ -10,7 +10,7 @@ describe('set', () => {
 
   it('set simple', () =>
   {
-    const code = Exprs.set('x').to(4);
+    const code = Exprs.set(Exprs.get(), 'x').to(4);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -21,7 +21,7 @@ describe('set', () => {
 
   it('set undefined', () =>
   {
-    const code = Exprs.set('y').to(5);
+    const code = Exprs.set(Exprs.get(), 'y').to(5);
     const program = LiveRuntime.getCommand(code);
     const context: any = { x: 3 };
 
@@ -32,7 +32,7 @@ describe('set', () => {
 
   it('set sub null', () =>
   {
-    const code = Exprs.set('x', 'y').to(null);
+    const code = Exprs.set(Exprs.get(), 'x', 'y').to(null);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 4 };
 
@@ -43,7 +43,7 @@ describe('set', () => {
 
   it('set map', () =>
   {
-    const code = Exprs.set('x', 'w').to(44);
+    const code = Exprs.set(Exprs.get(), 'x', 'w').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 
@@ -54,7 +54,7 @@ describe('set', () => {
 
   it('set map undefined', () =>
   {
-    const code = Exprs.set('x', 'w').to(44);
+    const code = Exprs.set(Exprs.get(), 'x', 'w').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['y', 4]]) };
 
@@ -65,7 +65,7 @@ describe('set', () => {
 
   it('set map sub', () =>
   {
-    const code = Exprs.set('x', 'w', 'z').to(44);
+    const code = Exprs.set(Exprs.get(), 'x', 'w', 'z').to(44);
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 

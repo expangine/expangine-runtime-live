@@ -21,7 +21,7 @@ describe('text', () => {
 
   it('toUpper', () =>
   {
-    const code = Exprs.computed('text:toUpper', Exprs.get('value'));
+    const code = Exprs.get('value', Exprs.computed('text:toUpper'));
 
     const program = LiveRuntime.getCommand(code);
 

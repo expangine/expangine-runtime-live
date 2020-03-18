@@ -5,40 +5,50 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
-  GetDataExpression, isUndefined, objectMap, isObject, isArray, isString, DataTypes } from 'expangine-runtime';
+  GetDataExpression, MethodExpression, isUndefined, objectMap, DataTypes, PathExpression, Expression } from 'expangine-runtime';
 import { preserveScope } from './helper';
-import { LiveCommand, LiveCommandMap, LiveRuntimeImpl } from './LiveRuntime';
+import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
 
 export default function(run: LiveRuntimeImpl)
 {
 
-  function traversePath(context: any, value: any, path: LiveCommand[])
+  function getPathTraverser(provider: LiveProvider, path: PathExpression)
   {
-    const end = path.length - 1;
-    let previous;
-    let step;
+    const exprs: Expression[] = path.expressions;
+    const nodes: LiveCommand[] = exprs.map((node) => provider.getCommand(node));
+    const contextual = exprs.map((node, index) => index === 0 || node.isPathNode());
+    const last = nodes.length - 1;
 
-    for (let i = 0; i <= end && !isUndefined(value); i++) 
+    return (context: LiveContext) =>
     {
-      step = path[i](context);
-      previous = value;
+      let value = context;
+      let previous;
+      let step;
+      let end = true;
 
-      const next = value instanceof Map
-        ? value.get(step)
-        : value === null
-          ? undefined
-          : value[step];
-
-      if (isUndefined(next) && i !== end) 
+      for (let i = 0; i <= last && !isUndefined(value); i++) 
       {
-        return { end: false, previous, step, value: undefined };
+        context[Expression.THIS] = value;
+        step = nodes[i](context);
+        previous = value;
+      
+        const next = contextual[i]
+          ? step
+          : DataTypes.get(value, step);
+
+        if (isUndefined(next) && i !== last) 
+        {
+          end = false;
+        }
+
+        value = next;
       }
 
-      value = next;
-    }
+      delete context[Expression.THIS];
 
-    return { end: true, previous, step, value };
+      return { end, previous, step, value };
+    };
   }
 
   run.setExpression(ConstantExpression, (expr, provider) => 
@@ -46,42 +56,30 @@ export default function(run: LiveRuntimeImpl)
     return () => DataTypes.copy(expr.value)
   });
 
-  run.setExpression(GetExpression, (expr, provider) => 
+  run.setExpression(PathExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
+    const traverser = getPathTraverser(provider, expr);
+    
+    return (context) => 
+    {
+      const { end, value } = traverser(context);
 
-    return (context) => traversePath(context, context, parts).value;
+      return end ? value : false;
+    };
   });
 
   run.setExpression(SetExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
+    const traverser = getPathTraverser(provider, expr.path);
     const getValue: LiveCommand = provider.getCommand(expr.value);
 
     return (context) => 
     {
-      const { end, previous, step } = traversePath(context, context, parts);
+      const { end, previous, step } = traverser(context);
 
       if (end) 
       {
-        if (previous instanceof Map)
-        {
-          previous.set(step, getValue(context));
-        }
-        else if (isArray(previous))
-        {
-          run.arraySet(previous, step, getValue(context));
-        }
-        else if (isString(previous) || isObject(previous))
-        {
-          run.objectSet(previous, step, getValue(context));
-        }
-        else
-        {
-          return false;
-        }
-
-        return true;
+        return DataTypes.set(previous, step, getValue(context));
       }
 
       return false;
@@ -90,13 +88,13 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(UpdateExpression, (expr, provider) => 
   {
-    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
+    const traverser = getPathTraverser(provider, expr.path);
     const getValue: LiveCommand = provider.getCommand(expr.value);
     const currentVariable: string = expr.currentVariable;
 
     return (context) => 
     {
-      const { end, previous, step, value } = traversePath(context, context, parts);
+      const { end, previous, step, value } = traverser(context);
 
       if (end)
       {
@@ -104,24 +102,7 @@ export default function(run: LiveRuntimeImpl)
         {
           context[currentVariable] = value;
         
-          if (previous instanceof Map)
-          {
-            previous.set(step, getValue(context));
-          }
-          else if (isArray(previous))
-          {
-            run.arraySet(previous, step, getValue(context));
-          }
-          else if (isString(previous) || isObject(previous))
-          {
-            run.objectSet(previous, step, getValue(context));
-          }
-          else
-          {
-            return false;
-          }
-
-          return true;
+          return DataTypes.set(previous, step, getValue(context));
         });
       }
 
@@ -131,10 +112,7 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(SubExpression, (expr, provider) => 
   {
-    const getValue: LiveCommand = provider.getCommand(expr.value);
-    const parts: LiveCommand[] = expr.path.map(sub => provider.getCommand(sub));
-
-    return (context) => traversePath(context, getValue(context), parts).value;
+    throw new Error('SubExpression is no longer supported.');
   });
 
   run.setExpression(ComputedExpression, (expr, provider) =>
@@ -147,16 +125,15 @@ export default function(run: LiveRuntimeImpl)
     }
 
     const op = provider.getOperation(comp.op);
-    const params: LiveCommandMap = {
-      ...objectMap(comp.params, (constant) => () => constant),
-      [comp.value]: provider.getCommand(expr.expression),
-    };
+    const params: LiveCommandMap = objectMap(comp.params, (constant) => () => constant);
 
-    const operationCommand = op(params, {});
-    
     return (context) =>
     {
       if (provider.returnProperty in context) return;
+
+      params[comp.value] = () => context[Expression.THIS];
+
+      const operationCommand = op(params, {});
 
       return operationCommand(context);
     };
@@ -540,6 +517,40 @@ export default function(run: LiveRuntimeImpl)
     };
   });
 
+  run.setExpression(MethodExpression, (expr, provider) =>
+  {
+    const entity = run.defs.getEntity(expr.entity);
+
+    if (!entity)
+    {
+      throw new Error(`Entity ${expr.entity} does not exist.`);
+    }
+
+    const method = entity.methods[expr.name];
+
+    if (!method)
+    {
+      throw new Error(`Method ${expr.name} in entity ${expr.entity} does not exist.`);
+    }
+
+    const command = provider.getCommand(method.expression);
+    const args = objectMap(expr.args, a => provider.getCommand(a));
+
+    return (context) => 
+    {
+      if (provider.returnProperty in context) return;
+
+      const params = objectMap(args, a => a(context));
+      const funcContext = method.getArguments(params, false);
+
+      funcContext[Expression.THIS] = context[Expression.THIS];
+
+      command(funcContext);
+
+      return funcContext[provider.returnProperty];
+    };
+  });
+
   run.setExpression(ReturnExpression, (expr, provider) =>
   {
     const returnValue = provider.getCommand(expr.value);
@@ -565,11 +576,14 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(CommentExpression, () => () => undefined);
 
+  run.setExpression(GetExpression, (expr, provider) => (context) => context);
+
   run.setExpression(GetEntityExpression, (expr) => () => expr.name);
 
   run.setExpression(GetRelationExpression, (expr) => () => expr.name);
 
-  run.setExpression(GetDataExpression, (expr) => () => {
+  run.setExpression(GetDataExpression, (expr) => () => 
+  {
     const data = run.defs.getData(expr.name);
 
     return data === null ? data : data.data;

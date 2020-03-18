@@ -138,8 +138,8 @@ describe('index', () => {
 
   it('update', () => {
 
-    const process = LiveRuntime.eval(['up', ['x'], ['op', 'num:*', {
-      value: ['get', ['current']],
+    const process = LiveRuntime.eval(['up', [['get'], 'x'], ['op', 'num:*', {
+      value: ['path', [['get'], 'current']],
       multiplier: 2
     }]]);
 

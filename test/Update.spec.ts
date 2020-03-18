@@ -10,7 +10,7 @@ describe('update', () => {
 
   it('update simple', () =>
   {
-    const code = Exprs.update('x').to(4);
+    const code = Exprs.update(Exprs.get(), 'x').to(4);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -21,7 +21,7 @@ describe('update', () => {
 
   it('update simple scoped', () =>
   {
-    const code = Exprs.update('x').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.update(Exprs.get(), 'x').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
@@ -35,7 +35,7 @@ describe('update', () => {
 
   it('update undefined', () =>
   {
-    const code = Exprs.update('y').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.update(Exprs.get(), 'y').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
@@ -49,7 +49,7 @@ describe('update', () => {
 
   it('update sub null', () =>
   {
-    const code = Exprs.update('x', 'y').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.update(Exprs.get(), 'x', 'y').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
@@ -63,7 +63,7 @@ describe('update', () => {
 
   it('update map', () =>
   {
-    const code = Exprs.update('x', 'w').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.update(Exprs.get(), 'x', 'w').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
@@ -77,7 +77,7 @@ describe('update', () => {
 
   it('update map undefined', () =>
   {
-    const code = Exprs.set('x', 'w').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'x', 'w').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
@@ -91,7 +91,7 @@ describe('update', () => {
 
   it('update map sub', () =>
   {
-    const code = Exprs.update('x', 'w', 'z').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.update(Exprs.get(), 'x', 'w', 'z').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
     }));
