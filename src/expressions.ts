@@ -543,7 +543,7 @@ export default function(run: LiveRuntimeImpl)
       const params = objectMap(args, a => a(context));
       const funcContext = method.getArguments(params, false);
 
-      funcContext[Expression.THIS] = context[Expression.THIS];
+      funcContext[Expression.INSTANCE] = context[Expression.THIS];
 
       command(funcContext);
 
