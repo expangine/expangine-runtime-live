@@ -21,7 +21,7 @@
     "build": "webpack --config webpack.config.js --mode production",
     "build:prod": "webpack --config webpack.config.js -p",
     "test": "jest",
-    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test:debug": "node --inspect-brk node_modules/jest/bin/jest.js --runInBand",
     "cleanup": "shx rm -rf umd lib lib-esm lib-fesm typings coverage ../expangine-runtime-live-pages/docs",
     "prebuild": "npm run cleanup && npm run verify",
     "docs": "typedoc -p . --readme README.md --theme minimal --mode file --target 'es5' --excludeNotExported --excludePrivate --ignoreCompilerErrors --exclude \"**/test/**/*.*\" --out ../expangine-runtime-live-pages/docs src/ && cp -R examples ../expangine-runtime-live-pages/ && cp -R umd ../expangine-runtime-live-pages/",

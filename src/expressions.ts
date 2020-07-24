@@ -29,8 +29,7 @@ export default function(run: LiveRuntimeImpl)
 
       for (let i = 0; i <= last && !isUndefined(value); i++) 
       {
-        context[Expression.THIS] = value;
-        step = nodes[i](context);
+        step = nodes[i](context, value);
         previous = value;
       
         const next = contextual[i]
@@ -44,8 +43,6 @@ export default function(run: LiveRuntimeImpl)
 
         value = next;
       }
-
-      delete context[Expression.THIS];
 
       return { end, previous, step, value };
     };
@@ -127,11 +124,11 @@ export default function(run: LiveRuntimeImpl)
     const op = provider.getOperation(comp.op);
     const params: LiveCommandMap = objectMap(comp.params, (constant) => () => constant);
 
-    return (context) =>
+    return (context, parent) =>
     {
       if (provider.returnProperty in context) return;
 
-      params[comp.value] = () => context[Expression.THIS];
+      params[comp.value] = () => parent;
 
       const operationCommand = op(params, {});
 
@@ -536,14 +533,14 @@ export default function(run: LiveRuntimeImpl)
     const command = provider.getCommand(method.expression);
     const args = objectMap(expr.args, a => provider.getCommand(a));
 
-    return (context) => 
+    return (context, parent) => 
     {
       if (provider.returnProperty in context) return;
 
       const params = objectMap(args, a => a(context));
       const funcContext = method.getArguments(params, false);
 
-      funcContext[Expression.INSTANCE] = context[Expression.THIS];
+      funcContext[Expression.INSTANCE] = parent;
 
       command(funcContext);
 
