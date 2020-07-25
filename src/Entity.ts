@@ -1,5 +1,6 @@
 import { EntityOps, EntityRelation, RelationTypeKey, DataTypes, isArray, ListType, RelationCascade, Entity, isObject, isEmpty } from 'expangine-runtime';
 import { LiveRuntimeImpl, LiveCommandMap, LiveContext } from './LiveRuntime';
+import { _object, _objectMaybe } from './helper';
 
 
 export default function(run: LiveRuntimeImpl)
@@ -255,7 +256,20 @@ export default function(run: LiveRuntimeImpl)
   run.setOperation(ops.newInstance, (params) => (context) => {
     const entity = getEntity(params.name(context));
     
-    return entity ? entity.type.create() : entity;
+    if (!entity) {
+      return {};
+    }
+
+    const values = entity.type.create();
+    const initial = _objectMaybe(params.initial, context, null);
+
+    if (initial) {
+      for (const prop in initial) {
+        values[prop] = DataTypes.copy(initial[prop]);
+      }
+    }
+
+    return values;
   });
 
   run.setOperation(ops.getKey, (params) => (context) =>
