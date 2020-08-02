@@ -1,5 +1,5 @@
 
-import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
+import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction, DataTypes } from 'expangine-runtime';
 import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
@@ -24,11 +24,11 @@ export function restoreScope<K extends string>(context: LiveContext, saved: Reco
   { 
     if (saved[prop] === undefined)
     {
-      delete context[prop];
+      DataTypes.objectRemove(context, prop);
     }
     else
     {
-      context[prop] = saved[prop];
+      DataTypes.objectSet(context, prop, saved[prop]);
     }
   }
 }
