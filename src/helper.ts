@@ -1,9 +1,9 @@
 
-import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction, DataTypes } from 'expangine-runtime';
-import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
+import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
+import { LiveContext, LiveResult, LiveCommand, LiveRuntimeImpl } from './LiveRuntime';
 
 
-export function preserveScope<R = any>(context: LiveContext, props: string[], run: () => R): R
+export function preserveScope<R = any>(runtime: LiveRuntimeImpl, context: LiveContext, props: string[], run: () => R): R
 {
   const saved = props.map((p) => runtime.dataGet(context, p));
 
