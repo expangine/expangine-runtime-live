@@ -1,8 +1,6 @@
 import { Color } from 'expangine-runtime';
-import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
-export declare function saveScope<K extends string>(context: LiveContext, scope: Record<string, K>): Record<K, any>;
-export declare function restoreScope<K extends string>(context: LiveContext, saved: Record<K, any>): void;
-export declare function preserveScope<R = any>(context: LiveContext, props: string[], run: () => R): R;
+import { LiveContext, LiveResult, LiveCommand, LiveRuntimeImpl } from './LiveRuntime';
+export declare function preserveScope<R = any>(runtime: LiveRuntimeImpl, context: LiveContext, props: string[], run: () => R): R;
 export declare function _optional(cmd: LiveCommand | undefined, context: LiveContext, defaultValue?: LiveResult): LiveResult;
 export declare function _bool(cmd: LiveCommand | undefined, context: LiveContext, defaultValue?: boolean): boolean;
 export declare function _typed<T>(isValid: (value: any) => value is T, invalidValueDefault: T): (cmd: LiveCommand, context: LiveContext, invalidValue?: T) => T;

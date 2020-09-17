@@ -1,48 +1,18 @@
 
 import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
-import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
+import { LiveContext, LiveResult, LiveCommand, LiveRuntimeImpl } from './LiveRuntime';
 
 
-
-export function saveScope<K extends string>(context: LiveContext, scope: Record<string, K>): Record<K, any> 
+export function preserveScope<R = any>(runtime: LiveRuntimeImpl, context: LiveContext, props: string[], run: () => R): R
 {
-  const popped = {} as Record<K, string>;
-
-  for (const prop in scope) 
-  {
-    const alias = scope[prop];
-
-    popped[alias] = context[alias]
-  }
-
-  return popped;
-}
-
-export function restoreScope<K extends string>(context: LiveContext, saved: Record<K, any>) 
-{
-  for (const prop in saved)
-  { 
-    if (saved[prop] === undefined)
-    {
-      delete context[prop];
-    }
-    else
-    {
-      context[prop] = saved[prop];
-    }
-  }
-}
-
-export function preserveScope<R = any>(context: LiveContext, props: string[], run: () => R): R
-{
-  const saved = props.map((p) => context[p]);
+  const saved = props.map((p) => runtime.dataGet(context, p));
 
   const result = run();
 
   saved.forEach((last, i) => 
     last === undefined
-      ? delete context[props[i]]
-      : context[props[i]] = last
+      ? runtime.dataRemove(context, props[i])
+      : runtime.dataSet(context, props[i], last)
   );
 
   return result;

@@ -288,7 +288,7 @@ export default function(run: LiveRuntimeImpl)
     }
 
     return entity.instances.filter((instance) => {
-      context[scope.instance] = instance;
+      run.dataSet(context, scope.instance, instance);
 
       return params.where(context);
     });

@@ -12,32 +12,67 @@ export type LiveCommandMap<K extends string | number | symbol = string> = Record
 
 export type LiveProvider = CommandProvider<LiveContext, LiveResult>;
 
-export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
+export interface LiveRuntimeOperations
+{
+  objectSet<O extends object, K extends keyof O>(obj: O, prop: K, value: O[K]): void;
+  objectRemove<O extends object, K extends keyof O>(obj: O, prop: K): void;
+  objectHas<O extends object>(obj: O, prop: string | number | symbol): boolean;
+  dataSet<O extends object, K extends keyof O>(obj: O, prop: K, value: O[K]): boolean;
+  dataGet<O extends object, K extends keyof O>(obj: O, prop: K): O[K];
+  dataRemove<O extends object, K extends keyof O>(obj: O, prop: K): void;
+  dataHas<O extends object>(obj: O, prop: string | number | symbol): boolean;
+  dataCopy<V>(value: V): V;
+  arrayAdd<T>(arr: T[], item: T): void;
+  arrayAddFirst<T>(arr: T[], item: T): void;
+  arrayRemoveLast<T>(arr: T[]): T;
+  arrayRemoveFirst<T>(arr: T[]): T;
+  arrayRemoveAt<T>(arr: T[], index: number): T;
+  arrayInsert<T>(arr: T[], index: number, item: T): void;
+  arraySet<T>(arr: T[], index: number, item: T): T;
+  arraySplice<T>(arr: T[], index: number, remove: number, ...items: T[]): T[];
+  arrayClear<T>(arr: T[]): T[];
+}
+
+export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> implements LiveRuntimeOperations
 {
 
   public strict: boolean;
 
-  public objectSet: <O extends object, K extends keyof O>(obj: O, prop: K, value: O[K]) => void 
+  public objectSet: LiveRuntimeOperations['objectSet'] 
     = (obj, prop, value) => DataTypes.objectSet(obj, prop, value);
-  public objectRemove: <O extends object, K extends keyof O>(obj: O, prop: K) => void
+  public objectRemove: LiveRuntimeOperations['objectRemove'] 
     = (obj, prop) => DataTypes.objectRemove(obj, prop);
-  public arrayAdd: <T>(arr: T[], item: T) => void
+  public objectHas: LiveRuntimeOperations['objectHas'] 
+    = (obj, prop) => prop in obj;
+
+  public dataSet: LiveRuntimeOperations['dataSet'] 
+    = (obj, prop, value) => DataTypes.set(obj, prop, value);
+  public dataGet: LiveRuntimeOperations['dataGet'] 
+    = (obj, prop) => DataTypes.get(obj, prop);
+  public dataRemove: LiveRuntimeOperations['dataRemove'] 
+    = (obj, prop) => DataTypes.remove(obj, prop);
+  public dataHas: LiveRuntimeOperations['dataHas'] 
+    = (obj, prop) => DataTypes.has(obj, prop);
+  public dataCopy: LiveRuntimeOperations['dataCopy']
+    = (value) => DataTypes.copy(value);
+
+  public arrayAdd: LiveRuntimeOperations['arrayAdd'] 
     = (arr, item) => DataTypes.arrayAdd(arr, item);
-  public arrayAddFirst: <T>(arr: T[], item: T) => void
+  public arrayAddFirst: LiveRuntimeOperations['arrayAddFirst'] 
     = (arr, item) => arr.unshift(item);
-  public arrayRemoveLast: <T>(arr: T[]) => T
+  public arrayRemoveLast: LiveRuntimeOperations['arrayRemoveLast'] 
     = (arr) => arr.pop();
-  public arrayRemoveFirst: <T>(arr: T[]) => T
+  public arrayRemoveFirst: LiveRuntimeOperations['arrayRemoveFirst'] 
     = (arr) => arr.shift();
-  public arrayRemoveAt: <T>(arr: T[], index: number) => T
+  public arrayRemoveAt: LiveRuntimeOperations['arrayRemoveAt'] 
     = (arr, index) => DataTypes.arrayRemove(arr, index);
-  public arrayInsert: <T>(arr: T[], index: number, item: T) => void
+  public arrayInsert: LiveRuntimeOperations['arrayInsert'] 
     = (arr, index, item) => arr.splice(index, 0, item);
-  public arraySet: <T>(arr: T[], index: number, item: T) => T
+  public arraySet: LiveRuntimeOperations['arraySet'] 
     = (arr, index, item) => DataTypes.arraySet(arr, index, item);
-  public arraySplice: <T>(arr: T[], index: number, remove: number, ...items: T[]) => T[]
+  public arraySplice: LiveRuntimeOperations['arraySplice'] 
     = (arr, index, remove, items) => arr.splice(index, remove, items);
-  public arrayClear: <T>(arr: T[]) => T[]
+  public arrayClear: LiveRuntimeOperations['arrayClear'] 
     = (arr) => arr.splice(0, arr.length);
 
   public constructor()
@@ -51,8 +86,8 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult>
     return (context) => {
       const result = cmd(context);
 
-      return this.returnProperty in context
-        ? context[this.returnProperty]
+      return this.dataHas(context, this.returnProperty)
+        ? this.dataGet(context, this.returnProperty)
         : result;
     };
   }

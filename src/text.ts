@@ -319,7 +319,7 @@ export default function(run: LiveRuntimeImpl)
     const value = _text(params.value, context);
     const regex = _regex(params.regex, context, params.all, params.ignoreCase, params.multiline);
 
-    return preserveScope(context, [scope.match], () => 
+    return preserveScope(run, context, [scope.match], () => 
       value.replace(regex, (...givenArgs: any[]) => {
         const args: any[] = Array.prototype.slice.call(givenArgs);
         args.pop();
@@ -329,7 +329,7 @@ export default function(run: LiveRuntimeImpl)
         const lastIndex = regex.lastIndex;
         const groups = args;
         
-        context[scope.match] = { index, lastIndex, input, groups };
+        run.dataSet(context, scope.match, { index, lastIndex, input, groups });
 
         return params.replace(context);
       })

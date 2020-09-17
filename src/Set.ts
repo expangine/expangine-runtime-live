@@ -1,5 +1,5 @@
 import { SetOps, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX, DataTypes } from 'expangine-runtime';
-import { saveScope, restoreScope, _set, _optional, _number, _setMaybe } from './helper';
+import { preserveScope, _set, _optional, _number, _setMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -70,10 +70,11 @@ export default function(run: LiveRuntimeImpl)
       return new Set(set);
     }
     const valuesCopy: any[] = [];
-    handleSet(set, context, scope, () => {  
+
+    preserveScope(run, context, [scope.value, scope.set], () => {
       for (const value of set) {
-        context[scope.value] = value;
-        context[scope.set] = set;
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.set, set);
 
         valuesCopy.push(_optional(params.deepCopy, context, value));
       }
@@ -89,10 +90,10 @@ export default function(run: LiveRuntimeImpl)
       return new Set(set);
     }
     const valuesTransformed: any[] = [];
-    handleSet(set, context, scope, () => {  
+    preserveScope(run, context, [scope.value, scope.set], () => {
       for (const value of set) {
-        context[scope.value] = value;
-        context[scope.set] = set;
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.set, set);
 
         valuesTransformed.push(_optional(params.transform, context, value));
       }
@@ -177,38 +178,26 @@ export default function(run: LiveRuntimeImpl)
     params.value(context)
   );
 
-}
-
-
-function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
-{
-  const val = value(context);
-
-  if (!isSet(val) || val.size === 0) 
+  function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
   {
+    const val = value(context);
+  
+    if (!isSet(val) || val.size === 0) 
+    {
+      return otherwise(val);
+    }
+  
+    const iterator = val[Symbol.iterator]();
+  
+    for (const item of iterator)
+    {
+      if (isType(item))
+      {
+        return item;
+      }
+    }
+  
     return otherwise(val);
   }
-
-  const iterator = val[Symbol.iterator]();
-
-  for (const item of iterator)
-  {
-    if (isType(item))
-    {
-      return item;
-    }
-  }
-
-  return otherwise(val);
-}
-
-function handleSet<R>(map: Set<any>, context: LiveContext, scope: Record<string, string>, handle: (map: Set<any>) => R): R
-{
-  const saved = saveScope(context, scope);
   
-  const result = handle(map);
-
-  restoreScope(context, saved);
-
-  return result;
 }

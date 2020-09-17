@@ -5,7 +5,7 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
-  GetDataExpression, MethodExpression, isUndefined, objectMap, DataTypes, PathExpression, Expression } from 'expangine-runtime';
+  GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression } from 'expangine-runtime';
 import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
@@ -34,7 +34,7 @@ export default function(run: LiveRuntimeImpl)
       
         const next = contextual[i]
           ? step
-          : DataTypes.get(value, step);
+          : run.dataGet(value, step);
 
         if (isUndefined(next) && i !== last) 
         {
@@ -48,9 +48,14 @@ export default function(run: LiveRuntimeImpl)
     };
   }
 
+  function shouldReturn(provider: LiveProvider, context: LiveContext)
+  {
+    return run.dataHas(context, provider.returnProperty);
+  }
+
   run.setExpression(ConstantExpression, (expr, provider) => 
   {
-    return () => DataTypes.copy(expr.value)
+    return () => run.dataCopy(expr.value)
   });
 
   run.setExpression(PathExpression, (expr, provider) => 
@@ -59,6 +64,8 @@ export default function(run: LiveRuntimeImpl)
     
     return (context) => 
     {
+      if (shouldReturn(provider, context)) return;
+
       const { end, value } = traverser(context);
 
       return end ? value : false;
@@ -72,11 +79,13 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
+      if (shouldReturn(provider, context)) return;
+
       const { end, previous, step } = traverser(context);
 
       if (end) 
       {
-        return DataTypes.set(previous, step, getValue(context));
+        return run.dataSet(previous, step, getValue(context));
       }
 
       return false;
@@ -91,15 +100,17 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
+      if (shouldReturn(provider, context)) return;
+      
       const { end, previous, step, value } = traverser(context);
 
       if (end)
       {
-        return preserveScope(context, [currentVariable], () => 
+        return preserveScope(run, context, [currentVariable], () => 
         {
-          context[currentVariable] = value;
+          run.dataSet(context, currentVariable, value);
         
-          return DataTypes.set(previous, step, getValue(context));
+          return run.dataSet(previous, step, getValue(context));
         });
       }
 
@@ -126,7 +137,7 @@ export default function(run: LiveRuntimeImpl)
 
     return (context, parent) =>
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       params[comp.value] = () => parent;
 
@@ -169,7 +180,7 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) =>
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       return operationCommand(context);
     };
@@ -181,7 +192,7 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       let last;
 
@@ -189,10 +200,7 @@ export default function(run: LiveRuntimeImpl)
       {
         last = cmd(context);
 
-        if (provider.returnProperty in context)
-        {
-          return;
-        }
+        if (shouldReturn(provider, context)) return;
       }
 
       return last;
@@ -206,7 +214,7 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       for (const caseExpression of cases)
       {
@@ -214,13 +222,13 @@ export default function(run: LiveRuntimeImpl)
 
         if (test(context)) 
         {
-          return provider.returnProperty in context
+          return shouldReturn(provider, context)
             ? undefined
             : result(context);
         }
       }
       
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       return otherwise(context);
     };
@@ -239,11 +247,11 @@ export default function(run: LiveRuntimeImpl)
     
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       const value = valueCommand(context);
 
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       for (const [tests, result] of cases)
       {
@@ -257,7 +265,7 @@ export default function(run: LiveRuntimeImpl)
             break;
           }
 
-          if (provider.returnProperty in context) return;
+          if (shouldReturn(provider, context)) return;
         }
 
         if (matches) 
@@ -284,11 +292,11 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       for (const and of expressions)
       {
-        if (!and(context) || provider.returnProperty in context)
+        if (!and(context) || shouldReturn(provider, context))
         {
           return false;
         }
@@ -305,13 +313,13 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       for (const or of expressions)
       {
         const pass = or(context);
 
-        if (pass || provider.returnProperty in context)
+        if (pass || shouldReturn(provider, context))
         {
           return pass;
         }
@@ -332,11 +340,11 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
-      return preserveScope(context, [variable, breakVariable], () => 
+      return preserveScope(run, context, [variable, breakVariable], () => 
       {
-        context[breakVariable] = false;
+        run.dataSet(context, breakVariable, false);
 
         let i = start(context);
         let iterations = 0;
@@ -344,17 +352,14 @@ export default function(run: LiveRuntimeImpl)
         let last;
         const dir = i < stop ? 1 : -1;
 
-        if (provider.returnProperty in context)
-        {
-          return;
-        }
+        if (shouldReturn(provider, context)) return;
 
         while ((dir === 1 ? i < stop : i > stop) && iterations++ < max) 
         {
-          context[variable] = i;
+          run.dataSet(context, variable, i);
           last = body(context);
 
-          if (context[breakVariable] || provider.returnProperty in context) 
+          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
           {
             break;
           }
@@ -362,7 +367,7 @@ export default function(run: LiveRuntimeImpl)
           i += dir;
           stop = end(context);
 
-          if (provider.returnProperty in context) return;
+          if (shouldReturn(provider, context)) return;
         }
 
         return last;
@@ -379,22 +384,22 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
-      return preserveScope(context, [breakVariable], () =>
+      return preserveScope(run, context, [breakVariable], () =>
       {
         let iterations = 0;
         let last;
 
-        context[breakVariable] = false;
+        run.dataSet(context, breakVariable, false);
 
         while (condition(context) && iterations++ < max)
         {
-          if (provider.returnProperty in context) return;
+          if (shouldReturn(provider, context)) return;
 
           last = body(context);
 
-          if (context[breakVariable] || provider.returnProperty in context) 
+          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
           {
             break;
           }
@@ -414,22 +419,22 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
-      return preserveScope(context, [breakVariable], () =>
+      return preserveScope(run, context, [breakVariable], () =>
       {
         let iterations = 0;
         let last;
 
-        context[breakVariable] = false;
+        run.dataSet(context, breakVariable, false);
 
         do
         {
-          if (provider.returnProperty in context) return;
+          if (shouldReturn(provider, context)) return;
 
           last = body(context);
 
-          if (context[breakVariable] || provider.returnProperty in context) 
+          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
           {
             break;
           }
@@ -449,24 +454,18 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) =>
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
-      return preserveScope(context, vars, () =>
+      return preserveScope(run, context, vars, () =>
       {
         for (const [name, defined] of define)
         {
-          if (provider.returnProperty in context)
-          {
-            return;
-          }
-
-          context[name] = defined(context);
+          if (shouldReturn(provider, context)) return;
+          
+          run.dataSet(context, name, defined(context));
         }
 
-        if (provider.returnProperty in context)
-        {
-          return;
-        }
+        if (shouldReturn(provider, context)) return;
 
         return body(context);
       });
@@ -503,14 +502,14 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       const params = objectMap(args, a => a(context));
       const funcContext = func.getArguments(params, false);
 
       command(funcContext);
 
-      return funcContext[provider.returnProperty];
+      return run.dataGet(funcContext, provider.returnProperty);
     };
   });
 
@@ -535,7 +534,7 @@ export default function(run: LiveRuntimeImpl)
 
     return (context, parent) => 
     {
-      if (provider.returnProperty in context) return;
+      if (shouldReturn(provider, context)) return;
 
       const params = objectMap(args, a => a(context));
       const funcContext = method.getArguments(params, false);
@@ -544,7 +543,7 @@ export default function(run: LiveRuntimeImpl)
 
       command(funcContext);
 
-      return funcContext[provider.returnProperty];
+      return run.dataGet(funcContext, provider.returnProperty);
     };
   });
 
@@ -552,7 +551,14 @@ export default function(run: LiveRuntimeImpl)
   {
     const returnValue = provider.getCommand(expr.value);
 
-    return (context) => context[provider.returnProperty] = returnValue(context);
+    return (context) => 
+    {
+      const result = returnValue(context);
+
+      run.dataSet(context, provider.returnProperty, result);
+
+      return result;
+    };
   });
 
   run.setExpression(TupleExpression, (expr, provider) =>
@@ -573,7 +579,7 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(CommentExpression, () => () => undefined);
 
-  run.setExpression(GetExpression, (expr, provider) => (context) => context);
+  run.setExpression(GetExpression, () => (context) => context);
 
   run.setExpression(GetEntityExpression, (expr) => () => expr.name);
 

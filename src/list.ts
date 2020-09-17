@@ -1,5 +1,5 @@
 import { ListOps, DataTypes, isBoolean, isEmpty, isDate, isNumber, isString, isArray, COMPONENT_MAX, isColor } from 'expangine-runtime';
-import { _list, _optional, _number, saveScope, restoreScope, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe, preserveScope } from './helper';
+import { _list, _optional, _number, _text, _bool, _asTuple, _asObject, _numberMaybe, _listMaybe, preserveScope } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -48,41 +48,40 @@ export default function(run: LiveRuntimeImpl)
       return list;
     }
 
-    const saved = saveScope(context, scope);
-
-    if (_bool(params.sameItem, context, false)) 
+    preserveScope(run, context, [scope.index, scope.last, scope.list, scope.count], () => 
     {
-      context[scope.index] = 0;
-      context[scope.last] = undefined;
-      context[scope.list] = list;
-      context[scope.count] = n;
-
-      const item = params.item(context);
-
-      for (let i = 0; i < n; i++) 
+      if (_bool(params.sameItem, context, false)) 
       {
-        list[i] = item;
-      }
-    } 
-    else 
-    {
-      let last;
-
-      for (let i = 0; i < n; i++) 
-      {
-        context[scope.index] = i;
-        context[scope.last] = last;
-        context[scope.list] = list;
-        context[scope.count] = n;
+        run.dataSet(context, scope.index, 0);
+        run.dataSet(context, scope.last, undefined);
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.count, n);
 
         const item = params.item(context);
 
-        last = item;
-        run.arrayAdd(list, item);
-      }
-    }
+        for (let i = 0; i < n; i++) 
+        {
+          run.arraySet(list, i, item);
+        }
+      } 
+      else 
+      {
+        let last;
 
-    restoreScope(context, saved);
+        for (let i = 0; i < n; i++) 
+        {
+          run.dataSet(context, scope.index, i);
+          run.dataSet(context, scope.last, last);
+          run.dataSet(context, scope.list, list);
+          run.dataSet(context, scope.count, n);
+
+          const item = params.item(context);
+
+          last = item;
+          run.arrayAdd(list, item);
+        }
+      }
+    });
 
     return list;
   });
@@ -245,20 +244,21 @@ export default function(run: LiveRuntimeImpl)
     );
   });
 
-  run.setOperation(ops.copy, (params, scope) => (context) => 
-    params.deepCopy
-      ? handleList(
-          _list(params.list, context), 
-          context, 
-          scope, 
-          list => list.map(item => {
-            context[scope.copy] = item;
-            
-            return params.deepCopy(context);
-          })
-        )
-      : _list(params.list, context).slice()
-  );
+  run.setOperation(ops.copy, (params, scope) => (context) => {
+    const list = _list(params.list, context);
+
+    if (!params.deepCopy) {
+      return list.slice();
+    }
+
+    return preserveScope(run, context, [scope.copy], () => {
+      return list.map(item => {
+        run.dataSet(context, scope.copy, item);
+        
+        return params.deepCopy(context);
+      });
+    });
+  });
 
   run.setOperation(ops.reverse, (params) => (context) => {
     const list = _list(params.list, context);
@@ -299,24 +299,21 @@ export default function(run: LiveRuntimeImpl)
     return overlapping;
   });
 
-  run.setOperation(ops.sort, (params, scope) => (context) =>
-    handleList(
-      _list(params.list, context), 
-      context, 
-      scope, 
-      list => {
-        list.sort((value, test) => {
-          context[scope.list] = list;
-          context[scope.value] = value;
-          context[scope.test] = test;
+  run.setOperation(ops.sort, (params, scope) => (context) => {
+    const list = _list(params.list, context);
 
-          return _number(params.compare, context, 0);
-        });
+    preserveScope(run, context, [scope.list, scope.value, scope.test], () => {
+      list.sort((value, test) => {
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.test, test);
 
-        return list;
-      }
-    )
-  );
+        return _number(params.compare, context, 0);
+      });
+    });
+
+    return list;
+  });
 
   run.setOperation(ops.shuffle, (params) => (context) => {
     const list = _list(params.list, context);
@@ -629,7 +626,7 @@ export default function(run: LiveRuntimeImpl)
       n => n, 
       params.initial(context),
       (item, index, list, reduced) => {
-        context[scope.reduced] = reduced;
+        run.dataSet(context, scope.reduced, reduced);
 
         return params.reduce(context);
       }
@@ -647,11 +644,11 @@ export default function(run: LiveRuntimeImpl)
 
     let less = 0, more = 0;
 
-    handleList(list, context, scope, () => {
+    preserveScope(run, context, [scope.list, scope.value, scope.test], () => {
       for (let i = 0; i < list.length; i++) {
-        context[scope.list] = list;
-        context[scope.value] = list[i];
-        context[scope.test] = test[i];
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.value, list[i]);
+        run.dataSet(context, scope.test, test[i]);
 
         const d = _number(params.compare, context, 0);
 
@@ -666,7 +663,7 @@ export default function(run: LiveRuntimeImpl)
   run.setOperation(ops.group, (params, scope) => (context) => {
     const list = _list(params.list, context);
 
-    return handleList(list, context, scope, () => {
+    return preserveScope(run, context, [scope.index, scope.item, scope.list], () => {
       type Grouping = { by: any, group: any[] };
 
       const map = new Map<any, Grouping>();
@@ -675,9 +672,9 @@ export default function(run: LiveRuntimeImpl)
       for (let i = 0; i < list.length; i++) {
         const value = list[i];
 
-        context[scope.index] = i;
-        context[scope.item] = value;
-        context[scope.list] = list;
+        run.dataSet(context, scope.index, i);
+        run.dataSet(context, scope.item, value);
+        run.dataSet(context, scope.list, list);
 
         const by = params.by(context);
         const grouping = map.get(by);
@@ -701,15 +698,15 @@ export default function(run: LiveRuntimeImpl)
   run.setOperation(ops.toListMap, (params, scope) => (context) => {
     const list = _list(params.list, context);
 
-    return handleList(list, context, scope, () => {
+    return preserveScope(run, context, [scope.index, scope.item, scope.list], () => {
       const map = new Map<any, any[]>();
 
       for (let i = 0; i < list.length; i++) {
         const value = list[i];
 
-        context[scope.index] = i;
-        context[scope.item] = value;
-        context[scope.list] = list;
+        run.dataSet(context, scope.index, i);
+        run.dataSet(context, scope.item, value);
+        run.dataSet(context, scope.list, list);
 
         const key = params.getKey(context);
         const keyList = map.get(key);
@@ -731,15 +728,15 @@ export default function(run: LiveRuntimeImpl)
   run.setOperation(ops.toMap, (params, scope) => (context) => {
     const list = _list(params.list, context);
 
-    return handleList(list, context, scope, () => {
+    return preserveScope(run, context, [scope.index, scope.item, scope.list], () => {
       const map = new Map();
 
       for (let i = 0; i < list.length; i++) {
         const item = list[i];
 
-        context[scope.index] = i;
-        context[scope.item] = item;
-        context[scope.list] = list;
+        run.dataSet(context, scope.index, i);
+        run.dataSet(context, scope.item, item);
+        run.dataSet(context, scope.list, list);
 
         const key = params.getKey(context);
         const value = _optional(params.getValue, context, item);
@@ -757,17 +754,17 @@ export default function(run: LiveRuntimeImpl)
     const a = _list(params.a, context);
     const b = _list(params.b, context);
 
-    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+    return preserveScope(run, context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
       const results: any[] = [];
 
       for (const itemA of a) {
         for (const itemB of b) {
-          context[scope.onA] = itemA;
-          context[scope.onB] = itemB;
+          run.dataSet(context, scope.onA, itemA);
+          run.dataSet(context, scope.onB, itemB);
 
           if (params.on(context)){ 
-            context[scope.joinA] = itemA;
-            context[scope.joinB] = itemB;
+            run.dataSet(context, scope.joinA, itemA);
+            run.dataSet(context, scope.joinB, itemB);
 
             results.push(params.join(context));
           }
@@ -782,19 +779,19 @@ export default function(run: LiveRuntimeImpl)
     const a = _list(params.a, context);
     const b = _list(params.b, context);
 
-    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+    return preserveScope(run, context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
       const results: any[] = [];
 
       for (const itemA of a) {
         let added = false;
         
         for (const itemB of b) {
-          context[scope.onA] = itemA;
-          context[scope.onB] = itemB;
+          run.dataSet(context, scope.onA, itemA);
+          run.dataSet(context, scope.onB, itemB);
 
           if (params.on(context)){ 
-            context[scope.joinA] = itemA;
-            context[scope.joinB] = itemB;
+            run.dataSet(context, scope.joinA, itemA);
+            run.dataSet(context, scope.joinB, itemB);
 
             results.push(params.join(context));
             added = true;
@@ -802,8 +799,8 @@ export default function(run: LiveRuntimeImpl)
         }
 
         if (!added) {
-          context[scope.joinA] = itemA;
-          context[scope.joinB] = undefined;
+          run.dataSet(context, scope.joinA, itemA);
+          run.dataSet(context, scope.joinB, undefined);
           results.push(params.join(context));
         }
       }
@@ -816,19 +813,19 @@ export default function(run: LiveRuntimeImpl)
     const a = _list(params.a, context);
     const b = _list(params.b, context);
 
-    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+    return preserveScope(run, context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
       const results: any[] = [];
 
       for (const itemB of b) {
         let added = false;
         
         for (const itemA of a) {
-          context[scope.onA] = itemA;
-          context[scope.onB] = itemB;
+          run.dataSet(context, scope.onA, itemA);
+          run.dataSet(context, scope.onB, itemB);
 
           if (params.on(context)){ 
-            context[scope.joinA] = itemA;
-            context[scope.joinB] = itemB;
+            run.dataSet(context, scope.joinA, itemA);
+            run.dataSet(context, scope.joinB, itemB);
 
             results.push(params.join(context));
             added = true;
@@ -836,8 +833,8 @@ export default function(run: LiveRuntimeImpl)
         }
 
         if (!added) {
-          context[scope.joinA] = undefined;
-          context[scope.joinB] = itemB;
+          run.dataSet(context, scope.joinA, undefined);
+          run.dataSet(context, scope.joinB, itemB);
           results.push(params.join(context));
         }
       }
@@ -850,7 +847,7 @@ export default function(run: LiveRuntimeImpl)
     const a = _list(params.a, context);
     const b = _list(params.b, context);
 
-    return preserveScope(context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
+    return preserveScope(run, context, [scope.onA, scope.onB, scope.joinA, scope.joinB], () => {
       const results: any[] = [];
       const joined: boolean[] = [];
 
@@ -860,12 +857,12 @@ export default function(run: LiveRuntimeImpl)
         for (let i = 0; i < b.length; i++) {
           const itemB = b[i];
 
-          context[scope.onA] = itemA;
-          context[scope.onB] = itemB;
+          run.dataSet(context, scope.onA, itemA);
+          run.dataSet(context, scope.onB, itemB);
 
           if (params.on(context)){ 
-            context[scope.joinA] = itemA;
-            context[scope.joinB] = itemB;
+            run.dataSet(context, scope.joinA, itemA);
+            run.dataSet(context, scope.joinB, itemB);
 
             results.push(params.join(context));
             joined[i] = true;
@@ -874,8 +871,8 @@ export default function(run: LiveRuntimeImpl)
         }
 
         if (!added) {
-          context[scope.joinA] = itemA;
-          context[scope.joinB] = undefined;
+          run.dataSet(context, scope.joinA, itemA);
+          run.dataSet(context, scope.joinB, undefined);
           results.push(params.join(context));
         }
       }
@@ -884,8 +881,8 @@ export default function(run: LiveRuntimeImpl)
         if (!joined[i]) {
           const itemB = b[i];
 
-          context[scope.joinA] = undefined;
-          context[scope.joinB] = itemB;
+          run.dataSet(context, scope.joinA, undefined);
+          run.dataSet(context, scope.joinB, itemB);
           results.push(params.join(context));
         }
       }
@@ -898,13 +895,13 @@ export default function(run: LiveRuntimeImpl)
     const a = _list(params.a, context);
     const b = _list(params.b, context);
 
-    return preserveScope(context, [scope.joinA, scope.joinB], () => {
+    return preserveScope(run, context, [scope.joinA, scope.joinB], () => {
       const results: any[] = [];
     
       for (const itemA of a) {
         for (const itemB of b) {
-          context[scope.joinA] = itemA;
-          context[scope.joinB] = itemB;
+          run.dataSet(context, scope.joinA, itemA);
+          run.dataSet(context, scope.joinB, itemB);
 
           results.push(params.join(context));
         }
@@ -1157,11 +1154,11 @@ export default function(run: LiveRuntimeImpl)
 
     let equal = true;
 
-    handleList(list, context, scope, () => {
+    preserveScope(run, context, [scope.list, scope.value, scope.test], () => {
       for (let i = 0; i < list.length; i++) {
-        context[scope.list] = list;
-        context[scope.value] = list[i];
-        context[scope.test] = test[i];
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.value, list[i]);
+        run.dataSet(context, scope.test, test[i]);
 
         if (!params.isEqual(context)) {
           equal = false;
@@ -1241,151 +1238,140 @@ export default function(run: LiveRuntimeImpl)
     new Set(_list(params.value, context))
   );
 
-}
-
-function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
-{
-  const val = value(context);
-
-  return isArray(val) && isType(val[0])
-    ? val[0]
-    : otherwise(val);
-}
-
-function handleList<R>(list: any[], context: object, scope: Record<string, string>, handle: (list: any[]) => R): R
-{
-  const saved = saveScope(context, scope);
-
-  const result = handle(list);
-
-  restoreScope(context, saved);
-
-  return result;
-}
-
-function handleAggregate<A>(
-  list: any[],
-  context: object,
-  scope: Record<'list' | 'item' | 'index', string>,
-  initialAggregate: A,
-  aggregate: (current: any, index: number, list: any[], aggregate: A) => A,
-  getAggregate: (aggregate: A) => number | null,
-): number | null {
-  return handleList(list, context, scope, () =>
+  function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
   {
-    let agg: A | null = initialAggregate;
+    const val = value(context);
 
-    for (let i = 0; i < list.length; i++)
+    return isArray(val) && isType(val[0])
+      ? val[0]
+      : otherwise(val);
+  }
+
+  function handleAggregate<A>(
+    list: any[],
+    context: LiveContext,
+    scope: Record<'list' | 'item' | 'index', string>,
+    initialAggregate: A,
+    aggregate: (current: any, index: number, list: any[], aggregate: A) => A,
+    getAggregate: (aggregate: A) => number | null,
+  ): number | null {
+    return preserveScope(run, context, [scope.list, scope.item, scope.index], () =>
     {
-      const item = list[i];
+      let agg: A | null = initialAggregate;
 
-      context[scope.list] = list;
-      context[scope.item] = item;
-      context[scope.index] = i;
-
-      agg = aggregate(item, i, list, agg);
-    }
-
-    return getAggregate(agg);
-  });
-}
-
-function handleListIteration<R>(
-  list: any[],
-  context: object,
-  scope: Record<'list' | 'item' | 'index', string>,
-  start: (n: number) => number,
-  end: (n: number) => number,
-  initialResult: R,
-  onItem: (current: any, index: number, list: any[], lastResult: R) => R,
-  earlyExit: boolean = false
-): R 
-{
-  return handleList(list, context, scope, () => 
-  {
-    const n = list.length;
-    let i = start(n);
-    const e = end(n);
-    const d = i < e ? 1 : -1;
-    let result = initialResult;
-
-    while (i !== e)
-    {
-      const item = list[i];
-
-      context[scope.list] = list;
-      context[scope.item] = item;
-      context[scope.index] = i;
-
-      const newResult = onItem(item, i, list, result);
-
-      if (earlyExit)
+      for (let i = 0; i < list.length; i++)
       {
-        if (newResult !== undefined)
+        const item = list[i];
+
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.item, item);
+        run.dataSet(context, scope.index, i);
+
+        agg = aggregate(item, i, list, agg);
+      }
+
+      return getAggregate(agg);
+    });
+  }
+
+  function handleListIteration<R>(
+    list: any[],
+    context: LiveContext,
+    scope: Record<'list' | 'item' | 'index', string>,
+    start: (n: number) => number,
+    end: (n: number) => number,
+    initialResult: R,
+    onItem: (current: any, index: number, list: any[], lastResult: R) => R,
+    earlyExit: boolean = false
+  ): R 
+  {
+    return preserveScope(run, context, [scope.list, scope.item, scope.index], () => 
+    {
+      const n = list.length;
+      let i = start(n);
+      const e = end(n);
+      const d = i < e ? 1 : -1;
+      let result = initialResult;
+
+      while (i !== e)
+      {
+        const item = list[i];
+
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.item, item);
+        run.dataSet(context, scope.index, i);
+
+        const newResult = onItem(item, i, list, result);
+
+        if (earlyExit)
         {
-          return newResult;
+          if (newResult !== undefined)
+          {
+            return newResult;
+          }
+        }
+        else
+        {
+          result = newResult;
+        }
+
+        if (list[i] === item || i !== 1)
+        {
+          i += d;
         }
       }
-      else
-      {
-        result = newResult;
-      }
 
-      if (list[i] === item || i !== 1)
+      return result;
+    });
+  }
+
+  function handleListIsEqual<R>(
+    list: any[],
+    context: LiveContext, 
+    params: Record<'list' | 'isEqual', LiveCommand>, 
+    scope: Record<'list' | 'value' | 'test', string>, 
+    value: any, 
+    start: (n: number) => number,
+    end: (n: number) => number,
+    handleMatch: (current: any, index: number, list: any[]) => R | undefined,
+    getDefaultResult: (list: any[]) => R
+  ): R
+  {
+    return preserveScope(run, context, [scope.list, scope.value, scope.test], () => 
+    {
+      const n = list.length;
+      let i = start(n);
+      const e = end(n);
+      const d = i < e ? 1 : -1;
+
+      while (i !== e)
       {
+        const test = list[i];
+        const next = list[i + d];
+
+        run.dataSet(context, scope.list, list);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.test, test);
+
+        if (params.isEqual(context)) 
+        {
+          const matchResult = handleMatch(test, i, list);
+
+          if (matchResult !== undefined)
+          {
+            return matchResult;
+          }
+          else if (list[i] === next)
+          {
+            i -= d;
+          }
+        }
+
         i += d;
       }
-    }
 
-    return result;
-  });
-}
+      return getDefaultResult(list);
+    });
+  }
 
-function handleListIsEqual<R>(
-  list: any[],
-  context: object, 
-  params: Record<'list' | 'isEqual', LiveCommand>, 
-  scope: Record<'list' | 'value' | 'test', string>, 
-  value: any, 
-  start: (n: number) => number,
-  end: (n: number) => number,
-  handleMatch: (current: any, index: number, list: any[]) => R | undefined,
-  getDefaultResult: (list: any[]) => R
-): R
-{
-  return handleList(list, context, scope, () => 
-  {
-    const n = list.length;
-    let i = start(n);
-    const e = end(n);
-    const d = i < e ? 1 : -1;
-
-    while (i !== e)
-    {
-      const test = list[i];
-      const next = list[i + d];
-
-      context[scope.list] = list;
-      context[scope.value] = value;
-      context[scope.test] = test;
-
-      if (params.isEqual(context)) 
-      {
-        const matchResult = handleMatch(test, i, list);
-
-        if (matchResult !== undefined)
-        {
-          return matchResult;
-        }
-        else if (list[i] === next)
-        {
-          i -= d;
-        }
-      }
-
-      i += d;
-    }
-
-    return getDefaultResult(list);
-  });
 }

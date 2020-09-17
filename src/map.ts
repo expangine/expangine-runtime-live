@@ -1,5 +1,5 @@
 import { MapOps, DataTypes, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
-import { saveScope, restoreScope, _map, _optional, _number, _mapMaybe, _object } from './helper';
+import { preserveScope, _map, _optional, _number, _mapMaybe, _object } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -39,15 +39,14 @@ export default function(run: LiveRuntimeImpl)
     const map = _map(params.map, context);
     const key = params.key(context);
     const existing = map.get(key);
-    const saved = saveScope(context, scope);
 
-    context[scope.existingValue] = existing;
+    preserveScope(run, context, [scope.existingValue], () => {
+      run.dataSet(context, scope.existingValue, existing);
 
-    const value = params.value(context);
+      const value = params.value(context);
 
-    map.set(key, value);
-
-    restoreScope(context, saved);
+      map.set(key, value);
+    });
 
     return existing;
   });
@@ -107,7 +106,7 @@ export default function(run: LiveRuntimeImpl)
     const map = _map(params.value, context);
     const test = _map(params.test, context);
 
-    return handleMap(map, context, scope, () => {
+    return preserveScope(run, context, [scope.value, scope.key, scope.test], () => {
       let less = 0, more = 0;
 
       for (const [key, value] of map.entries()) {
@@ -116,9 +115,9 @@ export default function(run: LiveRuntimeImpl)
           continue;
         }
 
-        context[scope.key] = key;
-        context[scope.value] = value;
-        context[scope.test] = test.get(key);
+        run.dataSet(context, scope.key, key);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.test, test.get(key));
 
         const d = _number(params.compare, context, 0);
 
@@ -144,11 +143,11 @@ export default function(run: LiveRuntimeImpl)
       return new Map(entries);
     }
     const entriesCopy: [any, any][] = [];
-    handleMap(map, context, scope, () => {  
+    preserveScope(run, context, [scope.value, scope.key, scope.map], () => {
       for (const [key, value] of entries) {
-        context[scope.key] = key;
-        context[scope.value] = value;
-        context[scope.map] = map;
+        run.dataSet(context, scope.key, key);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.map, map);
 
         entriesCopy.push([
           _optional(params.deepCopyKey, context, key),
@@ -168,11 +167,11 @@ export default function(run: LiveRuntimeImpl)
       return new Map(entries);
     }
     const entriesTransformed: [any, any][] = [];
-    handleMap(map, context, scope, () => {  
+    preserveScope(run, context, [scope.value, scope.value, scope.map], () => {
       for (const [key, value] of entries) {
-        context[scope.key] = key;
-        context[scope.value] = value;
-        context[scope.map] = map;
+        run.dataSet(context, scope.key, key);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.map, map);
 
         entriesTransformed.push([
           _optional(params.transformKey, context, key),
@@ -220,15 +219,15 @@ export default function(run: LiveRuntimeImpl)
       return false;
     }
 
-    return handleMap(map, context, scope, () => {
+    return preserveScope(run, context, [scope.value, scope.key, scope.test], () => {
       for (const [key, value] of map.entries()) {
         if (!test.has(key)) {
           return false;
         }
 
-        context[scope.key] = key;
-        context[scope.value] = value;
-        context[scope.test] = test.get(key);
+        run.dataSet(context, scope.key, key);
+        run.dataSet(context, scope.value, value);
+        run.dataSet(context, scope.test, test.get(key));
 
         if (!params.isEqual(context)) { 
           return false;
@@ -305,25 +304,13 @@ export default function(run: LiveRuntimeImpl)
     new Set(_map(params.value, context).values())
   );
 
-}
-
-
-function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
-{
-  const val = value(context);
-
-  return isMap(val) && isType(val.get('value'))
-    ? val.get('value')
-    : otherwise(val);
-}
-
-function handleMap<R>(map: Map<any, any>, context: LiveContext, scope: Record<string, string>, handle: (map: Map<any, any>) => R): R
-{
-  const saved = saveScope(context, scope);
+  function tryCastValue(value: LiveCommand, context: LiveContext, isType: (value: any) => boolean, otherwise: (value: any) => any)
+  {
+    const val = value(context);
   
-  const result = handle(map);
+    return isMap(val) && isType(val.get('value'))
+      ? val.get('value')
+      : otherwise(val);
+  }
 
-  restoreScope(context, saved);
-
-  return result;
 }

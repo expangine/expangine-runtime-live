@@ -1,5 +1,5 @@
 import { ColorOps, COMPONENT_MAX, Color, clampComponent, ColorType, ColorSpaceHSL, ColorNames, isColor, ColorSpaceRGB } from 'expangine-runtime';
-import { _color, _colorMaybe, _number, saveScope, restoreScope, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet } from './helper';
+import { _color, _colorMaybe, _number, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet, preserveScope } from './helper';
 import { LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -39,47 +39,57 @@ export default function(run: LiveRuntimeImpl)
 
   run.setOperation(ops.map, (params, scope) => (context) => {
     const value = _color(params.value, context);
-    const saved = saveScope(context, scope);
-    context[scope.value] = value.r;
-    context[scope.component] = 'r';
-    const r = _number(params.r, context, COMPONENT_MAX);
-    context[scope.value] = value.g;
-    context[scope.component] = 'g';
-    const g = _number(params.g, context, COMPONENT_MAX);
-    context[scope.value] = value.b;
-    context[scope.component] = 'b';
-    const b = _number(params.b, context, COMPONENT_MAX);
-    context[scope.value] = value.a;
-    context[scope.component] = 'a';
-    const a = _number(params.a, context, COMPONENT_MAX);
-    restoreScope(context, saved);
 
-    return { r, g, b, a };
+    return preserveScope(run, context, [scope.value, scope.component], () => {
+
+      run.dataSet(context, scope.value, value.r);
+      run.dataSet(context, scope.component, 'r');
+      const r = _number(params.r, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.g);
+      run.dataSet(context, scope.component, 'g');
+      const g = _number(params.g, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.b);
+      run.dataSet(context, scope.component, 'b');
+      const b = _number(params.b, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.a);
+      run.dataSet(context, scope.component, 'a');
+      const a = _number(params.a, context, COMPONENT_MAX);
+
+      return { r, g, b, a };
+    });
   });
 
   run.setOperation(ops.op, (params, scope) => (context) => {
     const value = _color(params.value, context);
     const test = _color(params.test, context);
-    const saved = saveScope(context, scope);
-    context[scope.value] = value.r;
-    context[scope.test] = test.r;
-    context[scope.component] = 'r';
-    const r = _number(params.r, context, COMPONENT_MAX);
-    context[scope.value] = value.g;
-    context[scope.test] = test.g;
-    context[scope.component] = 'g';
-    const g = _number(params.g, context, COMPONENT_MAX);
-    context[scope.value] = value.b;
-    context[scope.test] = test.b;
-    context[scope.component] = 'b';
-    const b = _number(params.b, context, COMPONENT_MAX);
-    context[scope.value] = value.a;
-    context[scope.test] = test.a;
-    context[scope.component] = 'a';
-    const a = _number(params.a, context, COMPONENT_MAX);
-    restoreScope(context, saved);
 
-    return { r, g, b, a };
+    return preserveScope(run, context, [scope.value, scope.test, scope.component], () => {
+
+      run.dataSet(context, scope.value, value.r);
+      run.dataSet(context, scope.test, test.r);
+      run.dataSet(context, scope.component, 'r');
+      const r = _number(params.r, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.g);
+      run.dataSet(context, scope.test, test.g);
+      run.dataSet(context, scope.component, 'g');
+      const g = _number(params.g, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.b);
+      run.dataSet(context, scope.test, test.b);
+      run.dataSet(context, scope.component, 'b');
+      const b = _number(params.b, context, COMPONENT_MAX);
+
+      run.dataSet(context, scope.value, value.a);
+      run.dataSet(context, scope.test, test.a);
+      run.dataSet(context, scope.component, 'a');
+      const a = _number(params.a, context, COMPONENT_MAX);
+
+      return { r, g, b, a };
+    });
   });
 
   run.setOperation(ops.clamp, (params) => (context) => {
