@@ -1,15 +1,15 @@
 
-import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction } from 'expangine-runtime';
-import { LiveContext, LiveResult, LiveCommand, LiveRuntimeImpl } from './LiveRuntime';
+import { isNumber, isString, isArray, isSet, isMap, isObject, isDate, isBoolean, isColor, Color, isFunction, DataTypes } from 'expangine-runtime';
+import { LiveContext, LiveResult, LiveCommand } from './LiveRuntime';
 
 
-export function preserveScope<R = any>(runtime: LiveRuntimeImpl, context: LiveContext, props: string[], run: () => R): R
+export function preserveScope<R = any>(context: LiveContext, props: string[], run: () => R): R
 {
   const saved = props.map((p) => runtime.dataGet(context, p));
 
   const result = run();
 
-  saved.forEach((last, i) => 
+  saved.forEach((last, i) =>
     last === undefined
       ? runtime.dataRemove(context, props[i])
       : runtime.dataSet(context, props[i], last)
@@ -18,7 +18,7 @@ export function preserveScope<R = any>(runtime: LiveRuntimeImpl, context: LiveCo
   return result;
 }
 
-export function _optional (cmd: LiveCommand | undefined, context: LiveContext, defaultValue?: LiveResult): LiveResult 
+export function _optional (cmd: LiveCommand | undefined, context: LiveContext, defaultValue?: LiveResult): LiveResult
 {
   return cmd ? cmd(context) : defaultValue;
 }
@@ -28,11 +28,11 @@ export function _bool (cmd: LiveCommand | undefined, context: LiveContext, defau
   return cmd ? !!cmd(context) : defaultValue;
 }
 
-export function _typed<T> (isValid: (value: any) => value is T, invalidValueDefault: T) 
+export function _typed<T> (isValid: (value: any) => value is T, invalidValueDefault: T)
 {
-  return (cmd: LiveCommand | undefined, context: LiveContext, invalidValue: T = invalidValueDefault) => 
+  return (cmd: LiveCommand | undefined, context: LiveContext, invalidValue: T = invalidValueDefault) =>
   {
-    if (!cmd) 
+    if (!cmd)
     {
       return invalidValue;
     }
@@ -43,11 +43,11 @@ export function _typed<T> (isValid: (value: any) => value is T, invalidValueDefa
   };
 }
 
-export function _typedDynamic<T> (isValid: (value: any) => value is T, invalidValueDefault: () => T) 
+export function _typedDynamic<T> (isValid: (value: any) => value is T, invalidValueDefault: () => T)
 {
-  return (cmd: LiveCommand | undefined, context: LiveContext, invalidValue: () => T = invalidValueDefault) => 
+  return (cmd: LiveCommand | undefined, context: LiveContext, invalidValue: () => T = invalidValueDefault) =>
   {
-    if (!cmd) 
+    if (!cmd)
     {
       return invalidValue();
     }
@@ -136,10 +136,10 @@ export function _colorOrNumber(getValue: LiveCommand, context: any)
 
 export function _regex(getPattern: LiveCommand, context: any, g?: LiveCommand | boolean, i?: LiveCommand | boolean, m?: LiveCommand | boolean): RegExp
 {
-  return new RegExp(_text(getPattern, context), 
+  return new RegExp(_text(getPattern, context),
     (_regexFlag(g, context, false) ? 'g' : '') +
     (_regexFlag(m, context, false) ? 'm' : '') +
-    (_regexFlag(i, context, false) ? 'i' : '') 
+    (_regexFlag(i, context, false) ? 'i' : '')
   );
 }
 
