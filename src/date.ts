@@ -21,7 +21,7 @@ export default function(run: LiveRuntimeImpl)
   ),
 
   run.setOperation(ops.today, (params) => (context) =>
-    startOf.day(new Date())
+    mutate(new Date(), startOf.day)
   );
 
   run.setOperation(ops.tomorrow, (params) => (context) =>

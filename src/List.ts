@@ -515,9 +515,8 @@ export default function(run: LiveRuntimeImpl)
     const list = _list(params.list, context);
     const flattened = Object.create(null);
 
-    for (let i = 0; i < list.length; i++) {
-      const obj = list[i];
-      if  (isObject(obj)) {
+    for (const obj of list) {
+      if (isObject(obj)) {
         for (const prop in obj) {
           const value = obj[prop];
 
