@@ -22,6 +22,7 @@ export interface LiveRuntimeOperations
   dataRemove<O extends object, K extends keyof O>(obj: O, prop: K): void;
   dataHas<O extends object>(obj: O, prop: string | number | symbol): boolean;
   dataCopy<V>(value: V): V;
+  enterScope<R = any>(context: LiveContext, props: string[], run: (innerContext: LiveContext) => R): R;
   arrayAdd<T>(arr: T[], item: T): void;
   arrayAddFirst<T>(arr: T[], item: T): void;
   arrayRemoveLast<T>(arr: T[]): T;
@@ -74,6 +75,18 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> implements
     = (arr, index, remove, items) => arr.splice(index, remove, items);
   public arrayClear: LiveRuntimeOperations['arrayClear'] 
     = (arr) => arr.splice(0, arr.length);
+
+  public enterScope: LiveRuntimeOperations['enterScope'] = (context, props, run) => {
+    const saved = props.map((p) => this.dataGet(context, p));
+    const result = run(context);
+    saved.forEach((last, i) =>
+      last === undefined
+        ? this.dataRemove(context, props[i])
+        : this.dataSet(context, props[i], last)
+    );
+
+    return result;
+  };
 
   public constructor()
   {

@@ -1,5 +1,5 @@
 import { MapOps, DataTypes, isMap, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX } from 'expangine-runtime';
-import { preserveScope, _map, _optional, _number, _mapMaybe, _object } from './helper';
+import { _map, _optional, _number, _mapMaybe, _object } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -40,10 +40,10 @@ export default function(run: LiveRuntimeImpl)
     const key = params.key(context);
     const existing = map.get(key);
 
-    preserveScope(run, context, [scope.existingValue], () => {
-      run.dataSet(context, scope.existingValue, existing);
+    run.enterScope(context, [scope.existingValue], (inner) => {
+      run.dataSet(inner, scope.existingValue, existing);
 
-      const value = params.value(context);
+      const value = params.value(inner);
 
       map.set(key, value);
     });
@@ -106,7 +106,7 @@ export default function(run: LiveRuntimeImpl)
     const map = _map(params.value, context);
     const test = _map(params.test, context);
 
-    return preserveScope(run, context, [scope.value, scope.key, scope.test], () => {
+    return run.enterScope(context, [scope.value, scope.key, scope.test], (inner) => {
       let less = 0, more = 0;
 
       for (const [key, value] of map.entries()) {
@@ -115,11 +115,11 @@ export default function(run: LiveRuntimeImpl)
           continue;
         }
 
-        run.dataSet(context, scope.key, key);
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.test, test.get(key));
+        run.dataSet(inner, scope.key, key);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.test, test.get(key));
 
-        const d = _number(params.compare, context, 0);
+        const d = _number(params.compare, inner, 0);
 
         if (d < 0) less++;
         else if (d > 0) more++;
@@ -143,15 +143,15 @@ export default function(run: LiveRuntimeImpl)
       return new Map(entries);
     }
     const entriesCopy: [any, any][] = [];
-    preserveScope(run, context, [scope.value, scope.key, scope.map], () => {
+    run.enterScope(context, [scope.value, scope.key, scope.map], (inner) => {
       for (const [key, value] of entries) {
-        run.dataSet(context, scope.key, key);
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.map, map);
+        run.dataSet(inner, scope.key, key);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.map, map);
 
         entriesCopy.push([
-          _optional(params.deepCopyKey, context, key),
-          _optional(params.deepCopy, context, value)
+          _optional(params.deepCopyKey, inner, key),
+          _optional(params.deepCopy, inner, value)
         ]);
       }
     });
@@ -167,15 +167,15 @@ export default function(run: LiveRuntimeImpl)
       return new Map(entries);
     }
     const entriesTransformed: [any, any][] = [];
-    preserveScope(run, context, [scope.value, scope.value, scope.map], () => {
+    run.enterScope(context, [scope.value, scope.value, scope.map], (inner) => {
       for (const [key, value] of entries) {
-        run.dataSet(context, scope.key, key);
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.map, map);
+        run.dataSet(inner, scope.key, key);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.map, map);
 
         entriesTransformed.push([
-          _optional(params.transformKey, context, key),
-          _optional(params.transform, context, value)
+          _optional(params.transformKey, inner, key),
+          _optional(params.transform, inner, value)
         ]);
       }
     });
@@ -219,17 +219,17 @@ export default function(run: LiveRuntimeImpl)
       return false;
     }
 
-    return preserveScope(run, context, [scope.value, scope.key, scope.test], () => {
+    return run.enterScope(context, [scope.value, scope.key, scope.test], (inner) => {
       for (const [key, value] of map.entries()) {
         if (!test.has(key)) {
           return false;
         }
 
-        run.dataSet(context, scope.key, key);
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.test, test.get(key));
+        run.dataSet(inner, scope.key, key);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.test, test.get(key));
 
-        if (!params.isEqual(context)) { 
+        if (!params.isEqual(inner)) { 
           return false;
         }
       }

@@ -13,6 +13,7 @@ export interface LiveRuntimeOperations {
     dataRemove<O extends object, K extends keyof O>(obj: O, prop: K): void;
     dataHas<O extends object>(obj: O, prop: string | number | symbol): boolean;
     dataCopy<V>(value: V): V;
+    enterScope<R = any>(context: LiveContext, props: string[], run: (innerContext: LiveContext) => R): R;
     arrayAdd<T>(arr: T[], item: T): void;
     arrayAddFirst<T>(arr: T[], item: T): void;
     arrayRemoveLast<T>(arr: T[]): T;
@@ -42,6 +43,7 @@ export declare class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> im
     arraySet: LiveRuntimeOperations['arraySet'];
     arraySplice: LiveRuntimeOperations['arraySplice'];
     arrayClear: LiveRuntimeOperations['arrayClear'];
+    enterScope: LiveRuntimeOperations['enterScope'];
     constructor();
     wrapCommandWithReturn(cmd: LiveCommand): LiveCommand;
     getCommandWithReturn(expr: Expression, provider?: LiveProvider): LiveCommand;

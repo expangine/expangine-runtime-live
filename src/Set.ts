@@ -1,5 +1,5 @@
 import { SetOps, isSet, isBoolean, isDate, isNumber, isObject, isString, isArray, isColor, COMPONENT_MAX, DataTypes } from 'expangine-runtime';
-import { preserveScope, _set, _optional, _number, _setMaybe } from './helper';
+import { _set, _optional, _number, _setMaybe } from './helper';
 import { LiveCommand, LiveContext, LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -71,12 +71,12 @@ export default function(run: LiveRuntimeImpl)
     }
     const valuesCopy: any[] = [];
 
-    preserveScope(run, context, [scope.value, scope.set], () => {
+    run.enterScope(context, [scope.value, scope.set], (inner) => {
       for (const value of set) {
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.set, set);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.set, set);
 
-        valuesCopy.push(_optional(params.deepCopy, context, value));
+        valuesCopy.push(_optional(params.deepCopy, inner, value));
       }
     });
 
@@ -90,12 +90,12 @@ export default function(run: LiveRuntimeImpl)
       return new Set(set);
     }
     const valuesTransformed: any[] = [];
-    preserveScope(run, context, [scope.value, scope.set], () => {
+    run.enterScope(context, [scope.value, scope.set], (inner) => {
       for (const value of set) {
-        run.dataSet(context, scope.value, value);
-        run.dataSet(context, scope.set, set);
+        run.dataSet(inner, scope.value, value);
+        run.dataSet(inner, scope.set, set);
 
-        valuesTransformed.push(_optional(params.transform, context, value));
+        valuesTransformed.push(_optional(params.transform, inner, value));
       }
     });
 

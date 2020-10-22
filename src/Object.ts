@@ -1,5 +1,5 @@
 import { ObjectOps, DataTypes, toString, isEmpty, isObject, isBoolean, isDate, isArray, isMap, isNumber, isString, isColor, COMPONENT_MAX, ColorType } from 'expangine-runtime';
-import { _object, _objectMaybe, _optional, _asSet, preserveScope } from './helper';
+import { _object, _objectMaybe, _optional, _asSet } from './helper';
 import { LiveContext, LiveRuntimeImpl, LiveCommand } from './LiveRuntime';
 
 
@@ -31,10 +31,10 @@ export default function(run: LiveRuntimeImpl)
     const object = _object(params.object, context);
     const key = params.key(context);
 
-    preserveScope(run, context, [scope.existingValue], () => {
-      run.dataSet(context, scope.existingValue, object[key]);
+    run.enterScope(context, [scope.existingValue], (inner) => {
+      run.dataSet(inner, scope.existingValue, object[key]);
 
-      const value = params.value(context);
+      const value = params.value(inner);
 
       run.objectSet(object, key, value);
     });

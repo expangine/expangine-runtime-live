@@ -4,7 +4,7 @@ import { Md5 } from 'ts-md5/dist/md5';
 
 
 import { TextOps, isString, parse, ColorType, COMPONENT_MAX } from 'expangine-runtime';
-import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, preserveScope, _asSet } from './helper';
+import { _number, _bool, _text, _numberMaybe, _asList, _asMap, _asObject, _asTuple, _textMaybe, _regex, _asSet } from './helper';
 import { LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -319,7 +319,7 @@ export default function(run: LiveRuntimeImpl)
     const value = _text(params.value, context);
     const regex = _regex(params.regex, context, params.all, params.ignoreCase, params.multiline);
 
-    return preserveScope(run, context, [scope.match], () => 
+    return run.enterScope(context, [scope.match], (inner) => 
       value.replace(regex, (...givenArgs: any[]) => {
         const args: any[] = Array.prototype.slice.call(givenArgs);
         args.pop();
@@ -329,9 +329,9 @@ export default function(run: LiveRuntimeImpl)
         const lastIndex = regex.lastIndex;
         const groups = args;
         
-        run.dataSet(context, scope.match, { index, lastIndex, input, groups });
+        run.dataSet(inner, scope.match, { index, lastIndex, input, groups });
 
-        return params.replace(context);
+        return params.replace(inner);
       })
     );
   });

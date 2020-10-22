@@ -6,7 +6,6 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
   GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression } from 'expangine-runtime';
-import { preserveScope } from './helper';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
 
@@ -106,11 +105,11 @@ export default function(run: LiveRuntimeImpl)
 
       if (end)
       {
-        return preserveScope(run, context, [currentVariable], () => 
+        return run.enterScope(context, [currentVariable], (inner) => 
         {
-          run.dataSet(context, currentVariable, value);
+          run.dataSet(inner, currentVariable, value);
         
-          return run.dataSet(previous, step, getValue(context));
+          return run.dataSet(previous, step, getValue(inner));
         });
       }
 
@@ -342,32 +341,32 @@ export default function(run: LiveRuntimeImpl)
     {
       if (shouldReturn(provider, context)) return;
 
-      return preserveScope(run, context, [variable, breakVariable], () => 
+      return run.enterScope(context, [variable, breakVariable], (inner) => 
       {
-        run.dataSet(context, breakVariable, false);
+        run.dataSet(inner, breakVariable, false);
 
-        let i = start(context);
+        let i = start(inner);
         let iterations = 0;
-        let stop = end(context);
+        let stop = end(inner);
         let last;
         const dir = i < stop ? 1 : -1;
 
-        if (shouldReturn(provider, context)) return;
+        if (shouldReturn(provider, inner)) return;
 
         while ((dir === 1 ? i < stop : i > stop) && iterations++ < max) 
         {
-          run.dataSet(context, variable, i);
-          last = body(context);
+          run.dataSet(inner, variable, i);
+          last = body(inner);
 
-          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
+          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
           {
             break;
           }
 
           i += dir;
-          stop = end(context);
+          stop = end(inner);
 
-          if (shouldReturn(provider, context)) return;
+          if (shouldReturn(provider, inner)) return;
         }
 
         return last;
@@ -386,20 +385,20 @@ export default function(run: LiveRuntimeImpl)
     {
       if (shouldReturn(provider, context)) return;
 
-      return preserveScope(run, context, [breakVariable], () =>
+      return run.enterScope(context, [breakVariable], (inner) =>
       {
         let iterations = 0;
         let last;
 
-        run.dataSet(context, breakVariable, false);
+        run.dataSet(inner, breakVariable, false);
 
-        while (condition(context) && iterations++ < max)
+        while (condition(inner) && iterations++ < max)
         {
-          if (shouldReturn(provider, context)) return;
+          if (shouldReturn(provider, inner)) return;
 
-          last = body(context);
+          last = body(inner);
 
-          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
+          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
           {
             break;
           }
@@ -421,25 +420,25 @@ export default function(run: LiveRuntimeImpl)
     {
       if (shouldReturn(provider, context)) return;
 
-      return preserveScope(run, context, [breakVariable], () =>
+      return run.enterScope(context, [breakVariable], (inner) =>
       {
         let iterations = 0;
         let last;
 
-        run.dataSet(context, breakVariable, false);
+        run.dataSet(inner, breakVariable, false);
 
         do
         {
-          if (shouldReturn(provider, context)) return;
+          if (shouldReturn(provider, inner)) return;
 
-          last = body(context);
+          last = body(inner);
 
-          if (run.dataGet(context, breakVariable) || shouldReturn(provider, context))
+          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
           {
             break;
           }
 
-        } while(condition(context) && iterations++ < max);
+        } while(condition(inner) && iterations++ < max);
 
         return last;
       });
@@ -456,18 +455,18 @@ export default function(run: LiveRuntimeImpl)
     {
       if (shouldReturn(provider, context)) return;
 
-      return preserveScope(run, context, vars, () =>
+      return run.enterScope(context, vars, (inner) =>
       {
         for (const [name, defined] of define)
         {
-          if (shouldReturn(provider, context)) return;
+          if (shouldReturn(provider, inner)) return;
           
-          run.dataSet(context, name, defined(context));
+          run.dataSet(inner, name, defined(inner));
         }
 
-        if (shouldReturn(provider, context)) return;
+        if (shouldReturn(provider, inner)) return;
 
-        return body(context);
+        return body(inner);
       });
     };
   });

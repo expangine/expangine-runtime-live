@@ -1,5 +1,5 @@
 import { ColorOps, COMPONENT_MAX, Color, clampComponent, ColorType, ColorSpaceHSL, ColorNames, isColor, ColorSpaceRGB } from 'expangine-runtime';
-import { _color, _colorMaybe, _number, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet, preserveScope } from './helper';
+import { _color, _colorMaybe, _number, _colorOrNumber, _bool, _text, _object, _asList, _asMap, _asTuple, _asSet } from './helper';
 import { LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -40,23 +40,23 @@ export default function(run: LiveRuntimeImpl)
   run.setOperation(ops.map, (params, scope) => (context) => {
     const value = _color(params.value, context);
 
-    return preserveScope(run, context, [scope.value, scope.component], () => {
+    return run.enterScope(context, [scope.value, scope.component], (inner) => {
 
-      run.dataSet(context, scope.value, value.r);
-      run.dataSet(context, scope.component, 'r');
-      const r = _number(params.r, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.r);
+      run.dataSet(inner, scope.component, 'r');
+      const r = _number(params.r, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.g);
-      run.dataSet(context, scope.component, 'g');
-      const g = _number(params.g, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.g);
+      run.dataSet(inner, scope.component, 'g');
+      const g = _number(params.g, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.b);
-      run.dataSet(context, scope.component, 'b');
-      const b = _number(params.b, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.b);
+      run.dataSet(inner, scope.component, 'b');
+      const b = _number(params.b, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.a);
-      run.dataSet(context, scope.component, 'a');
-      const a = _number(params.a, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.a);
+      run.dataSet(inner, scope.component, 'a');
+      const a = _number(params.a, inner, COMPONENT_MAX);
 
       return { r, g, b, a };
     });
@@ -66,27 +66,27 @@ export default function(run: LiveRuntimeImpl)
     const value = _color(params.value, context);
     const test = _color(params.test, context);
 
-    return preserveScope(run, context, [scope.value, scope.test, scope.component], () => {
+    return run.enterScope(context, [scope.value, scope.test, scope.component], (inner) => {
 
-      run.dataSet(context, scope.value, value.r);
-      run.dataSet(context, scope.test, test.r);
-      run.dataSet(context, scope.component, 'r');
-      const r = _number(params.r, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.r);
+      run.dataSet(inner, scope.test, test.r);
+      run.dataSet(inner, scope.component, 'r');
+      const r = _number(params.r, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.g);
-      run.dataSet(context, scope.test, test.g);
-      run.dataSet(context, scope.component, 'g');
-      const g = _number(params.g, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.g);
+      run.dataSet(inner, scope.test, test.g);
+      run.dataSet(inner, scope.component, 'g');
+      const g = _number(params.g, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.b);
-      run.dataSet(context, scope.test, test.b);
-      run.dataSet(context, scope.component, 'b');
-      const b = _number(params.b, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.b);
+      run.dataSet(inner, scope.test, test.b);
+      run.dataSet(inner, scope.component, 'b');
+      const b = _number(params.b, inner, COMPONENT_MAX);
 
-      run.dataSet(context, scope.value, value.a);
-      run.dataSet(context, scope.test, test.a);
-      run.dataSet(context, scope.component, 'a');
-      const a = _number(params.a, context, COMPONENT_MAX);
+      run.dataSet(inner, scope.value, value.a);
+      run.dataSet(inner, scope.test, test.a);
+      run.dataSet(inner, scope.component, 'a');
+      const a = _number(params.a, inner, COMPONENT_MAX);
 
       return { r, g, b, a };
     });

@@ -1,5 +1,5 @@
 import { AnyOps, parse, DataTypes, toString, ColorType, COMPONENT_MAX } from 'expangine-runtime';
-import { _asList, _asTuple, _asMap, _asObject, _asSet, preserveScope } from './helper';
+import { _asList, _asTuple, _asMap, _asObject, _asSet } from './helper';
 import { LiveRuntimeImpl } from './LiveRuntime';
 
 
@@ -28,9 +28,9 @@ export default function(run: LiveRuntimeImpl)
     const isDefined = value !== null && value !== undefined;
   
     if (isDefined) {
-      preserveScope(run, context, [scope.defined], () => {
-        run.dataSet(context, scope.defined, value);
-        params.defined(context);
+      run.enterScope(context, [scope.defined], (inner) => {
+        run.dataSet(inner, scope.defined, value);
+        params.defined(inner);
       });
     }
 
