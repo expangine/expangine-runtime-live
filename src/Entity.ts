@@ -287,11 +287,13 @@ export default function(run: LiveRuntimeImpl)
       return entity.instances;
     }
 
-    return entity.instances.filter((instance) => {
-      run.dataSet(context, scope.instance, instance);
+    return run.enterScope(context, [scope.instance], (inner) => 
+      entity.instances.filter((instance) => {
+        run.dataSet(inner, scope.instance, instance);
 
-      return params.where(context);
-    });
+        return params.where(inner);
+      })
+    );
   });
 
   run.setOperation(ops.save, (params) => (context) => {
