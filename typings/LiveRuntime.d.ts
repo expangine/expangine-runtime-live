@@ -1,4 +1,4 @@
-import { Runtime, Command, Expression, CommandProvider } from 'expangine-runtime';
+import { Runtime, Command, Expression, CommandProvider, FlowType } from 'expangine-runtime';
 export declare type LiveContext = Record<string, any> | (any[] & Record<string, any>);
 export declare type LiveResult = any;
 export declare type LiveCommand = Command<LiveContext, LiveResult>;
@@ -48,5 +48,8 @@ export declare class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> im
     wrapCommandWithReturn(cmd: LiveCommand): LiveCommand;
     getCommandWithReturn(expr: Expression, provider?: LiveProvider): LiveCommand;
     run(expr: any, context: LiveContext, provider?: LiveProvider): LiveResult;
+    flowChange(context: LiveContext, provider?: LiveProvider): FlowType | false;
+    flowClear(context: LiveContext, provider?: LiveProvider): void;
+    getCommandMap(context: LiveContext, commands: LiveCommandMap, provider?: LiveProvider): any;
 }
 export declare const LiveRuntime: LiveRuntimeImpl;

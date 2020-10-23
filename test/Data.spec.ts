@@ -1,8 +1,10 @@
-import { Types, defs, Exprs } from 'expangine-runtime';
+import { Types, defs, Exprs, addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 describe('Data', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   defs.addData({
     name: 'bigData',

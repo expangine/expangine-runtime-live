@@ -1,12 +1,14 @@
 // import { describe, it, expect } from 'jest';
 
-import { ListOps, NumberType, TextType, OptionalType, BooleanType, DateType, MapType, OperationExpression, ConstantExpression, Exprs, NumberOps, Types } from 'expangine-runtime';
+import { ListOps, NumberType, TextType, OptionalType, BooleanType, DateType, MapType, OperationExpression, ConstantExpression, Exprs, NumberOps, Types, addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 // tslint:disable: no-magic-numbers
 
 describe('index', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   it('has test', () =>
   {
@@ -64,11 +66,16 @@ describe('index', () => {
           value: ['get', ['a']],
           addend: 1
         }]],
-        ['set', ['break'], ['op', 'num:=', {
-          value: ['get', ['a']],
-          test: 4
-        }]]
-      ]]
+        ['if', [
+          [
+            ['op', 'num:=', {
+              value: ['get', ['a']],
+              test: 4
+            }],
+            ['flow', 'break'],
+          ],
+        ]],
+      ]],
     ]);
 
     const ctx = { a: 2 };
@@ -110,11 +117,14 @@ describe('index', () => {
           value: ['get', ['a']],
           addend: 1
         }]],
-        ['set', ['break'], ['op', 'num:=', {
-          value: ['get', ['a']],
-          test: 4
-        }]]
-      ]]
+        ['if', [
+          [['op', 'num:=', {
+            value: ['get', ['a']],
+            test: 4
+          }],
+          ['flow', 'break']],
+        ]],
+      ]],
     ]);
 
     const ctx = { a: 2 };

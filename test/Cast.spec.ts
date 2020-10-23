@@ -1,10 +1,12 @@
 
-import { TupleType, ObjectType, TextType, BooleanType, DateType, ListType, MapType, NumberType, ConstantExpression, DataTypes } from 'expangine-runtime';
+import { TupleType, ObjectType, TextType, BooleanType, DateType, ListType, MapType, NumberType, ConstantExpression, DataTypes, addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 // tslint:disable: no-magic-numbers
 
 describe('cast', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   it('simple', () =>
   {

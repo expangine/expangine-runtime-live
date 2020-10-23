@@ -1,8 +1,10 @@
-import { Types, defs, EntityPrimaryType, EntityOps, Exprs, Relation } from 'expangine-runtime';
+import { Types, defs, EntityPrimaryType, EntityOps, Exprs, Relation, addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 describe('Entity', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   defs.addEntity({
     name: 'Task',

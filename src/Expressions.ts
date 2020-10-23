@@ -2,10 +2,10 @@
 import { ConstantExpression, GetExpression, OperationExpression, ChainExpression, 
   IfExpression, NotExpression, AndExpression, OrExpression, ForExpression, 
   WhileExpression, DefineExpression, SwitchExpression, SetExpression, 
-  DoExpression, TemplateExpression, UpdateExpression, InvokeExpression, 
-  ReturnExpression, NoExpression, TupleExpression, ObjectExpression, SubExpression,
+  DoExpression, TemplateExpression, InvokeExpression, 
+  FlowExpression, NoExpression, TupleExpression, ObjectExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
-  GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression } from 'expangine-runtime';
+  GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression, FlowType } from 'expangine-runtime';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
 
@@ -29,6 +29,13 @@ export default function(run: LiveRuntimeImpl)
       for (let i = 0; i <= last && !isUndefined(value); i++) 
       {
         step = nodes[i](context, value);
+
+        if (run.flowChange(context, provider))
+        {
+          end = false;
+          break;
+        }
+
         previous = value;
       
         const next = contextual[i]
@@ -47,11 +54,6 @@ export default function(run: LiveRuntimeImpl)
     };
   }
 
-  function shouldReturn(provider: LiveProvider, context: LiveContext)
-  {
-    return run.dataHas(context, provider.returnProperty);
-  }
-
   run.setExpression(ConstantExpression, (expr, provider) => 
   {
     return () => run.dataCopy(expr.value)
@@ -63,8 +65,6 @@ export default function(run: LiveRuntimeImpl)
     
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       const { end, value } = traverser(context);
 
       return end ? value : false;
@@ -75,51 +75,55 @@ export default function(run: LiveRuntimeImpl)
   {
     const traverser = getPathTraverser(provider, expr.path);
     const getValue: LiveCommand = provider.getCommand(expr.value);
-
-    return (context) => 
-    {
-      if (shouldReturn(provider, context)) return;
-
-      const { end, previous, step } = traverser(context);
-
-      if (end) 
-      {
-        return run.dataSet(previous, step, getValue(context));
-      }
-
-      return false;
-    };
-  });
-
-  run.setExpression(UpdateExpression, (expr, provider) => 
-  {
-    const traverser = getPathTraverser(provider, expr.path);
-    const getValue: LiveCommand = provider.getCommand(expr.value);
     const currentVariable: string = expr.currentVariable;
 
-    return (context) => 
+    if (currentVariable)
     {
-      if (shouldReturn(provider, context)) return;
-      
-      const { end, previous, step, value } = traverser(context);
-
-      if (end)
+      return (context) => 
       {
-        return run.enterScope(context, [currentVariable], (inner) => 
+        const { end, previous, step, value } = traverser(context);
+
+        if (end)
         {
-          run.dataSet(inner, currentVariable, value);
-        
-          return run.dataSet(previous, step, getValue(inner));
-        });
-      }
+          return run.enterScope(context, [currentVariable], (inner) => 
+          {
+            run.dataSet(inner, currentVariable, value);
 
-      return false;
-    };
-  });
+            const newValue = getValue(inner);
 
-  run.setExpression(SubExpression, (expr, provider) => 
-  {
-    throw new Error('SubExpression is no longer supported.');
+            if (run.flowChange(context, provider))
+            {
+              return;
+            }
+          
+            return run.dataSet(previous, step, newValue);
+          });
+        }
+
+        return false;
+      };
+    }
+    else
+    {
+      return (context) => 
+      {
+        const { end, previous, step } = traverser(context);
+
+        if (end) 
+        {
+          const newValue = getValue(context);
+
+          if (run.flowChange(context, provider))
+          {
+            return;
+          }
+          
+          return run.dataSet(previous, step, newValue);
+        }
+
+        return false;
+      };
+    }
   });
 
   run.setExpression(ComputedExpression, (expr, provider) =>
@@ -136,8 +140,6 @@ export default function(run: LiveRuntimeImpl)
 
     return (context, parent) =>
     {
-      if (shouldReturn(provider, context)) return;
-
       params[comp.value] = () => parent;
 
       const operationCommand = op(params, {});
@@ -175,14 +177,7 @@ export default function(run: LiveRuntimeImpl)
       }
     }
 
-    const operationCommand = op(params, scopeAlias);
-
-    return (context) =>
-    {
-      if (shouldReturn(provider, context)) return;
-
-      return operationCommand(context);
-    };
+    return op(params, scopeAlias);
   });
 
   run.setExpression(ChainExpression, (expr, provider) => 
@@ -191,15 +186,13 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       let last;
 
       for (const cmd of chain)
       {
         last = cmd(context);
 
-        if (shouldReturn(provider, context)) return;
+        if (run.flowChange(context, provider)) return;
       }
 
       return last;
@@ -213,21 +206,17 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       for (const caseExpression of cases)
       {
         const [test, result] = caseExpression;
 
         if (test(context)) 
         {
-          return shouldReturn(provider, context)
+          return run.flowChange(context, provider)
             ? undefined
             : result(context);
         }
       }
-      
-      if (shouldReturn(provider, context)) return;
 
       return otherwise(context);
     };
@@ -246,11 +235,9 @@ export default function(run: LiveRuntimeImpl)
     
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       const value = valueCommand(context);
 
-      if (shouldReturn(provider, context)) return;
+      if (run.flowChange(context, provider)) return;
 
       for (const [tests, result] of cases)
       {
@@ -264,7 +251,7 @@ export default function(run: LiveRuntimeImpl)
             break;
           }
 
-          if (shouldReturn(provider, context)) return;
+          if (run.flowChange(context, provider)) return;
         }
 
         if (matches) 
@@ -291,11 +278,9 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       for (const and of expressions)
       {
-        if (!and(context) || shouldReturn(provider, context))
+        if (!and(context) || run.flowChange(context, provider))
         {
           return false;
         }
@@ -312,13 +297,11 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
       for (const or of expressions)
       {
         const pass = or(context);
 
-        if (pass || shouldReturn(provider, context))
+        if (pass || run.flowChange(context, provider))
         {
           return pass;
         }
@@ -333,40 +316,45 @@ export default function(run: LiveRuntimeImpl)
     const variable: string = expr.variable;
     const start: LiveCommand = provider.getCommand(expr.start);
     const end: LiveCommand = provider.getCommand(expr.end);
+    const endDynamic: boolean = expr.end.isDynamic();
     const body: LiveCommand = provider.getCommand(expr.body);
-    const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
-
-      return run.enterScope(context, [variable, breakVariable], (inner) => 
+      return run.enterScope(context, [variable], (inner) => 
       {
-        run.dataSet(inner, breakVariable, false);
-
         let i = start(inner);
         let iterations = 0;
         let stop = end(inner);
         let last;
         const dir = i < stop ? 1 : -1;
 
-        if (shouldReturn(provider, inner)) return;
+        if (run.flowChange(inner, provider)) return;
 
         while ((dir === 1 ? i < stop : i > stop) && iterations++ < max) 
         {
           run.dataSet(inner, variable, i);
           last = body(inner);
 
-          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
-          {
+          const flow = run.flowChange(inner, provider);
+
+          if (flow === FlowType.CONTINUE) {
+            run.flowClear(context, provider);
+          } else if (flow === FlowType.BREAK) {
+            run.flowClear(context, provider);
             break;
+          } else if (flow) {
+            return;
           }
 
           i += dir;
-          stop = end(inner);
 
-          if (shouldReturn(provider, inner)) return;
+          if (endDynamic) {
+            stop = end(inner);
+
+            if (run.flowChange(inner, provider)) return;
+          }
         }
 
         return last;
@@ -378,34 +366,42 @@ export default function(run: LiveRuntimeImpl)
   {
     const condition: LiveCommand = provider.getCommand(expr.condition);
     const body: LiveCommand = provider.getCommand(expr.body);
-    const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
+      let iterations = 0;
+      let last;
 
-      return run.enterScope(context, [breakVariable], (inner) =>
+      while (condition(context) && iterations++ < max)
       {
-        let iterations = 0;
-        let last;
+        const flowCondition = run.flowChange(context, provider);
 
-        run.dataSet(inner, breakVariable, false);
-
-        while (condition(inner) && iterations++ < max)
-        {
-          if (shouldReturn(provider, inner)) return;
-
-          last = body(inner);
-
-          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
-          {
-            break;
-          }
+        if (flowCondition === FlowType.CONTINUE) {
+          run.flowClear(context, provider);
+          continue;
+        } else if (flowCondition === FlowType.BREAK) {
+          run.flowClear(context, provider);
+          break;
+        } else if (flowCondition) {
+          return;
         }
 
-        return last;
-      });
+        last = body(context);
+
+        const flowBody = run.flowChange(context, provider);
+
+        if (flowBody === FlowType.CONTINUE) {
+          run.flowClear(context, provider);
+        } else if (flowBody === FlowType.BREAK) {
+          run.flowClear(context, provider);
+          break;
+        } else if (flowBody) {
+          return;
+        }
+      }
+
+      return last;
     };
   });
 
@@ -413,35 +409,43 @@ export default function(run: LiveRuntimeImpl)
   {
     const condition: LiveCommand = provider.getCommand(expr.condition);
     const body: LiveCommand = provider.getCommand(expr.body);
-    const breakVariable: string = expr.breakVariable;
     const max: number = expr.maxIterations;
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
+      let iterations = 0;
+      let last;
 
-      return run.enterScope(context, [breakVariable], (inner) =>
+      do
       {
-        let iterations = 0;
-        let last;
+        const flowCondition = run.flowChange(context, provider);
 
-        run.dataSet(inner, breakVariable, false);
+        if (flowCondition === FlowType.CONTINUE) {
+          run.flowClear(context, provider);
+          continue;
+        } else if (flowCondition === FlowType.BREAK) {
+          run.flowClear(context, provider);
+          break;
+        } else if (flowCondition) {
+          return;
+        }
 
-        do
-        {
-          if (shouldReturn(provider, inner)) return;
+        last = body(context);
 
-          last = body(inner);
+        const flowBody = run.flowChange(context, provider);
 
-          if (run.dataGet(inner, breakVariable) || shouldReturn(provider, inner))
-          {
-            break;
-          }
+        if (flowBody === FlowType.CONTINUE) {
+          run.flowClear(context, provider);
+        } else if (flowBody === FlowType.BREAK) {
+          run.flowClear(context, provider);
+          break;
+        } else if (flowBody) {
+          return;
+        }
 
-        } while(condition(inner) && iterations++ < max);
+      } while(condition(context) && iterations++ < max);
 
-        return last;
-      });
+      return last;
     };
   });
 
@@ -453,18 +457,14 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) =>
     {
-      if (shouldReturn(provider, context)) return;
-
       return run.enterScope(context, vars, (inner) =>
       {
         for (const [name, defined] of define)
-        {
-          if (shouldReturn(provider, inner)) return;
-          
+        { 
           run.dataSet(inner, name, defined(inner));
-        }
 
-        if (shouldReturn(provider, inner)) return;
+          if (run.flowChange(inner, provider)) return;
+        }
 
         return body(inner);
       });
@@ -487,9 +487,11 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) =>
     {
-      const source = objectMap(params, p => p(context));
+      const source = run.getCommandMap(context, params, provider);
 
-      return sections.reduce((out, section) => out + section(source), '');
+      return source
+        ? sections.reduce((out, section) => out + section(source), '')
+        : undefined;
     };
   });
 
@@ -501,14 +503,25 @@ export default function(run: LiveRuntimeImpl)
 
     return (context) => 
     {
-      if (shouldReturn(provider, context)) return;
+      const params = run.getCommandMap(context, args, provider);
 
-      const params = objectMap(args, a => a(context));
+      if (!params)
+      {
+        return;
+      }
+
       const funcContext = func.getArguments(params, false);
 
       command(funcContext);
 
-      return run.dataGet(funcContext, provider.returnProperty);
+      const [type, result] = run.dataGet(funcContext, provider.flowProperty);
+
+      if (type === FlowType.EXIT)
+      {
+        run.dataSet(context, provider.flowProperty, [type, result]);
+      }
+
+      return result;
     };
   });
 
@@ -533,20 +546,31 @@ export default function(run: LiveRuntimeImpl)
 
     return (context, parent) => 
     {
-      if (shouldReturn(provider, context)) return;
+      const params = run.getCommandMap(context, args, provider);
 
-      const params = objectMap(args, a => a(context));
+      if (!params) 
+      {
+        return;
+      }
+
       const funcContext = method.getArguments(params, false);
 
       funcContext[Expression.INSTANCE] = parent;
 
       command(funcContext);
 
-      return run.dataGet(funcContext, provider.returnProperty);
+      const [type, result] = run.dataGet(funcContext, provider.flowProperty);
+
+      if (type === FlowType.EXIT)
+      {
+        run.dataSet(context, provider.flowProperty, [type, result]);
+      }
+
+      return result;
     };
   });
 
-  run.setExpression(ReturnExpression, (expr, provider) =>
+  run.setExpression(FlowExpression, (expr, provider) =>
   {
     const returnValue = provider.getCommand(expr.value);
 
@@ -554,7 +578,7 @@ export default function(run: LiveRuntimeImpl)
     {
       const result = returnValue(context);
 
-      run.dataSet(context, provider.returnProperty, result);
+      run.dataSet(context, provider.flowProperty, [expr.type, result]);
 
       return result;
     };
@@ -564,14 +588,29 @@ export default function(run: LiveRuntimeImpl)
   {
     const elements: LiveCommand[] = expr.expressions.map(e => provider.getCommand(e));
 
-    return (context) => elements.map(cmd => cmd(context));
+    return (context) => 
+    {
+      const tuple = [];
+
+      for (const element of elements) 
+      {
+        tuple.push(element(context));
+
+        if (run.flowChange(context, provider))
+        {
+          return;
+        }
+      }
+
+      return tuple;
+    };
   });
 
   run.setExpression(ObjectExpression, (expr, provider) =>
   {
     const props: LiveCommandMap = objectMap(expr.props, e => provider.getCommand(e));
 
-    return (context) => objectMap(props, cmd => cmd(context));
+    return (context) => run.getCommandMap(context, props, provider);
   });
 
   run.setExpression(NoExpression, () => () => undefined);

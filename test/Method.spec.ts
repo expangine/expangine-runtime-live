@@ -1,12 +1,14 @@
 // import { describe, it, expect } from 'jest';
 
-import { Exprs, Types, NumberOps, Expression, FuncOptions } from 'expangine-runtime';
+import { Exprs, Types, NumberOps, Expression, FuncOptions, addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 // tslint:disable: no-magic-numbers
 
 describe('method', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   LiveRuntime.defs.addEntity({
     name: 'MethodTest',
@@ -87,8 +89,6 @@ describe('method', () => {
     const context = { a: { x: 4, y: 0 }, b: { x: -4, y: 0 } };
     
     const result = program(context);
-
-    debugger;
 
     expect(result).toEqual(8);
   });

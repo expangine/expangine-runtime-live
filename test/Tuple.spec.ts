@@ -1,10 +1,13 @@
 
+import { addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 // tslint:disable: no-magic-numbers
 
 describe('tuple', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   it('isValid', () =>
   {

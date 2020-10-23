@@ -1,12 +1,14 @@
 // import { describe, it, expect } from 'jest';
 
-import { Exprs, NumberOps } from 'expangine-runtime';
+import { addBackwardsCompatibility, Exprs, NumberOps } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 // tslint:disable: no-magic-numbers
 
 describe('text', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   it('toPercent', () =>
   {

@@ -1,6 +1,6 @@
 // import { describe, it, expect } from 'jest';
 
-import { Exprs, NumberOps } from 'expangine-runtime';
+import { addBackwardsCompatibility, Exprs, NumberOps } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
@@ -8,9 +8,11 @@ import { LiveRuntime } from '../src';
 
 describe('update', () => {
 
+  addBackwardsCompatibility(LiveRuntime.defs);
+
   it('update simple', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'x').to(4);
+    const code = Exprs.set(Exprs.get(), 'x').to(4);
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -21,10 +23,10 @@ describe('update', () => {
 
   it('update simple scoped', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'x').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'x').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context = { x: 3 };
     
@@ -35,10 +37,10 @@ describe('update', () => {
 
   it('update undefined', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'y').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'y').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context: any = { x: 3 };
 
@@ -49,10 +51,10 @@ describe('update', () => {
 
   it('update sub null', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'x', 'y').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'x', 'y').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context = { x: 4 };
 
@@ -63,10 +65,10 @@ describe('update', () => {
 
   it('update map', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'x', 'w').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'x', 'w').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 
@@ -80,7 +82,7 @@ describe('update', () => {
     const code = Exprs.set(Exprs.get(), 'x', 'w').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['y', 4]]) };
 
@@ -91,10 +93,10 @@ describe('update', () => {
 
   it('update map sub', () =>
   {
-    const code = Exprs.update(Exprs.get(), 'x', 'w', 'z').to(Exprs.op(NumberOps.mul, {
+    const code = Exprs.set(Exprs.get(), 'x', 'w', 'z').to(Exprs.op(NumberOps.mul, {
       value: Exprs.get('current'),
       multiplier: 2
-    }));
+    })).withVariable('current');
     const program = LiveRuntime.getCommand(code);
     const context = { x: new Map([['w', 4]]) };
 

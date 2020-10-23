@@ -1,11 +1,14 @@
 // import { describe, it, expect } from 'jest';
 
+import { addBackwardsCompatibility } from 'expangine-runtime';
 import { LiveRuntime } from '../src';
 
 
 // tslint:disable: no-magic-numbers
 
 describe('index', () => {
+
+  addBackwardsCompatibility(LiveRuntime.defs);
 
   it('has test', () =>
   {

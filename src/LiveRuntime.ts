@@ -1,4 +1,4 @@
-import { Runtime, Command, defs, Expression, CommandProvider, DataTypes } from 'expangine-runtime';
+import { Runtime, Command, defs, Expression, CommandProvider, DataTypes, FlowType } from 'expangine-runtime';
 
 
 
@@ -99,8 +99,8 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> implements
     return (context) => {
       const result = cmd(context);
 
-      return this.dataHas(context, this.returnProperty)
-        ? this.dataGet(context, this.returnProperty)
+      return this.dataHas(context, this.flowProperty)
+        ? this.dataGet(context, this.flowProperty)[1]
         : result;
     };
   }
@@ -113,6 +113,35 @@ export class LiveRuntimeImpl extends Runtime<LiveContext, LiveResult> implements
   public run(expr: any, context: LiveContext, provider: LiveProvider = this): LiveResult
   {
     return this.getCommandWithReturn(this.defs.getExpression(expr), provider)(context);
+  }
+
+  public flowChange(context: LiveContext, provider: LiveProvider = this): FlowType | false
+  {
+    return this.dataHas(context, provider.flowProperty)
+      ? this.dataGet(context, provider.flowProperty)[0]
+      : false;
+  }
+
+  public flowClear(context: LiveContext, provider: LiveProvider = this): void
+  {
+    this.dataRemove(context, provider.flowProperty);
+  }
+
+  public getCommandMap(context: LiveContext, commands: LiveCommandMap, provider: LiveProvider = this)
+  {
+    const obj = Object.create(null);
+
+    for (const prop in commands) 
+    {
+      obj[prop] = commands[prop](context);
+
+      if (this.flowChange(context, provider)) 
+      {
+        return;
+      }
+    }
+
+    return obj; 
   }
 
 }
