@@ -338,4 +338,72 @@ describe('index', () => {
     expect(program({})).toEqual(4);
   });
 
+  it('assert empty', () => 
+  {
+    const context = {
+      x: 4,
+    };
+
+    const cmd = LiveRuntime.getCommand(
+      Exprs.assert(Exprs.op(NumberOps.isDivisible, {
+        value: Exprs.get('x'),
+        by: 3.
+      }))
+    );
+
+    const result = cmd(context);
+
+    expect(result).toBeUndefined();
+    expect(context[LiveRuntime.flowProperty]).toEqual([
+      'exit',
+      undefined
+    ]);
+  });
+
+  it('assert constant', () => 
+  {
+    const context = {
+      x: 4,
+    };
+
+    const cmd = LiveRuntime.getCommand(
+      Exprs.assert(Exprs.op(NumberOps.isDivisible, {
+        value: Exprs.get('x'),
+        by: 3.
+      }), 'NO!')
+    );
+
+    const result = cmd(context);
+
+    expect(result).toBeUndefined();
+    expect(context[LiveRuntime.flowProperty]).toEqual([
+      'exit',
+      'NO!'
+    ]);
+  });
+
+  it('assert template', () => 
+  {
+    const context = {
+      x: 4,
+    };
+
+    const cmd = LiveRuntime.getCommand(
+      Exprs.assert(Exprs.op(NumberOps.isDivisible, {
+        value: Exprs.get('x'),
+        by: 3.
+      }), Exprs.template('{x} must be divisible by 3', {
+        x: Exprs.get('x'),
+      }))
+    );
+
+    const result = cmd(context);
+
+    expect(result).toBeUndefined();
+    expect(context[LiveRuntime.flowProperty]).toEqual([
+      'exit',
+      '4 must be divisible by 3'
+    ]);
+  });
+
 });

@@ -5,7 +5,8 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   DoExpression, TemplateExpression, InvokeExpression, 
   FlowExpression, NoExpression, TupleExpression, ObjectExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
-  GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression, FlowType } from 'expangine-runtime';
+  GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression, 
+  AssertExpression, FlowType } from 'expangine-runtime';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
 
@@ -581,6 +582,20 @@ export default function(run: LiveRuntimeImpl)
       run.dataSet(context, provider.flowProperty, [expr.type, result]);
 
       return result;
+    };
+  });
+
+  run.setExpression(AssertExpression, (expr, provider) => 
+  {
+    const condition: LiveCommand = provider.getCommand(expr.condition);
+    const message: LiveCommand = provider.getCommand(expr.message);
+
+    return (context) => 
+    {
+      if (!condition(context))
+      {
+        run.dataSet(context, provider.flowProperty, [FlowType.EXIT, message(context)]);
+      }
     };
   });
 
