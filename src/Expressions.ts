@@ -7,6 +7,7 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
   GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression, 
   AssertExpression, FlowType } from 'expangine-runtime';
+import { _number } from './helper';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
 
@@ -318,6 +319,8 @@ export default function(run: LiveRuntimeImpl)
     const start: LiveCommand = provider.getCommand(expr.start);
     const end: LiveCommand = provider.getCommand(expr.end);
     const endDynamic: boolean = expr.end.isDynamic();
+    const by: LiveCommand = provider.getCommand(expr.by);
+    const byDynamic: boolean = expr.by.isDynamic();
     const body: LiveCommand = provider.getCommand(expr.body);
     const max: number = expr.maxIterations;
 
@@ -328,8 +331,9 @@ export default function(run: LiveRuntimeImpl)
         let i = start(inner);
         let iterations = 0;
         let stop = end(inner);
-        let last;
         const dir = i < stop ? 1 : -1;
+        let amount = byDynamic ? dir : dir * Math.abs(_number(by, inner, 1));
+        let last;
 
         if (run.flowChange(inner, provider)) return;
 
@@ -349,13 +353,19 @@ export default function(run: LiveRuntimeImpl)
             return;
           }
 
-          i += dir;
+          if (byDynamic) {
+            amount = dir * Math.abs(_number(by, inner, 1));
+
+            if (run.flowChange(inner, provider)) return;
+          }
 
           if (endDynamic) {
             stop = end(inner);
 
             if (run.flowChange(inner, provider)) return;
           }
+
+          i += amount;
         }
 
         return last;
