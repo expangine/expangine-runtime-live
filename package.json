@@ -54,7 +54,7 @@
   "dependencies": {
     "expangine-runtime": "git+https://github.com/expangine/expangine-runtime.git#master",
     "metaphone": "1.0.5",
-    "simple-crypto-js": "2.2.0",
+    "simple-crypto-js": "2.3.0",
     "ts-md5": "1.2.7"
   },
   "devDependencies": {
