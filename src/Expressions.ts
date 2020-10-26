@@ -6,7 +6,7 @@ import { ConstantExpression, GetExpression, OperationExpression, ChainExpression
   FlowExpression, NoExpression, TupleExpression, ObjectExpression,
   ComputedExpression, GetEntityExpression, GetRelationExpression, CommentExpression,
   GetDataExpression, MethodExpression, isUndefined, objectMap, PathExpression, Expression, 
-  AssertExpression, FlowType } from 'expangine-runtime';
+  AssertExpression, FlowType, isObject } from 'expangine-runtime';
 import { _number } from './helper';
 import { LiveCommand, LiveCommandMap, LiveRuntimeImpl, LiveProvider, LiveContext } from './LiveRuntime';
 
@@ -462,9 +462,21 @@ export default function(run: LiveRuntimeImpl)
 
   run.setExpression(DefineExpression, (expr, provider) => 
   {
-    const define: [string, LiveCommand][] = expr.define.map(([name, e]) => [name, provider.getCommand(e)]);
-    const vars: string[] = define.map(([name]) => name);
+    const define: [string | Record<string, string | number>, LiveCommand][] = expr.define.map(([name, e]) => [name, provider.getCommand(e)]);
+    const vars: string[] = [];
     const body: LiveCommand = provider.getCommand(expr.body);
+
+    define.forEach(([name]) => 
+    {
+      if (isObject(name))
+      {
+        for (const prop in name) vars.push(prop);
+      }
+      else
+      {
+        vars.push(name);
+      }
+    });
 
     return (context) =>
     {
@@ -472,7 +484,22 @@ export default function(run: LiveRuntimeImpl)
       {
         for (const [name, defined] of define)
         { 
-          run.dataSet(inner, name, defined(inner));
+          const definedValue = defined(inner);
+
+          if (isObject(name))
+          {
+            if (definedValue)
+            {
+              for (const prop in name)
+              {
+                run.dataSet(inner, prop, definedValue[name[prop]]);
+              }
+            }
+          }
+          else
+          {
+            run.dataSet(inner, name, definedValue);
+          }
 
           if (run.flowChange(inner, provider)) return;
         }

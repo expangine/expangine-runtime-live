@@ -406,4 +406,29 @@ describe('index', () => {
     ]);
   });
 
+  it('destructure', () => 
+  {
+    const context = {
+      x: 4,
+      y: { z: 5, w: true },
+    };
+
+    const cmd = LiveRuntime.getCommand(
+      Exprs.define([
+        ['x1', Exprs.get('x')],
+        [{ z: 'z', w1: 'w' }, Exprs.get('y')],
+      ]).run(
+        Exprs.tuple(
+          Exprs.get('z'),
+          Exprs.get('x1'),
+          Exprs.get('w1'),
+        ),
+      ),
+    );
+
+    const result = cmd(context);
+
+    expect(result).toStrictEqual([5, 4, true]);
+  });
+
 });
